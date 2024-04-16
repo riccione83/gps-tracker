@@ -48,23 +48,26 @@ const LoginPage = () => {
     const email = formData.get("email");
     const password = formData.get("password");
 
-    const response = await fetch(API_URL + "/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    });
+    try {
+      const response = await fetch(API_URL + "/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-    if (response.ok) {
-      const body = await response.json();
-      localStorage.setItem("login", JSON.stringify(body));
-      dispatch(setUserState(body as User));
-    } else {
-      const resp = await response.json();
-      setError(resp.error);
-      // Handle errors
+      if (response.ok) {
+        const body = await response.json();
+        localStorage.setItem("login", JSON.stringify(body));
+        dispatch(setUserState(body as User));
+      } else {
+        const resp = await response.json();
+        setError(resp.error);
+      }
+    } catch {
+      setError("Unable to login, please try again later");
     }
   }
 
@@ -154,54 +157,6 @@ const LoginPage = () => {
       </Box>
     </Flex>
   );
-  // <div
-  //   style={{
-  //     display: "flex",
-  //     alignItems: "center",
-  //     justifyContent: "center",
-  //     width: "100vw",
-  //     height: "100vh",
-  //     background: "rgb(66,88,148)",
-  //   }}
-  // >
-  //   <div
-  //     style={{
-  //       border: "1px solid lightblue",
-  //       padding: 40,
-  //       borderRadius: 4,
-  //       marginRight: 16,
-  //       minHeight: "80px",
-  //     }}
-  //   >
-  //     {!error ? "Login with your credentials" : error}
-  //   </div>
-  //   <form
-  //     onSubmit={handleSubmit}
-  //     style={{
-  //       border: "1px solid lightblue",
-  //       padding: 40,
-  //       borderRadius: 4,
-  //       display: "flex",
-  //       flexDirection: "column",
-  //     }}
-  //   >
-  //     <input
-  //       style={{ marginBottom: 8 }}
-  //       type="email"
-  //       name="email"
-  //       placeholder="Email"
-  //       required
-  //     />
-  //     <input
-  //       style={{ marginBottom: 8 }}
-  //       type="password"
-  //       name="password"
-  //       placeholder="Password"
-  //       required
-  //     />
-  //     <button type="submit">Login</button>
-  //   </form>
-  // </div>
 };
 
 export default LoginPage;
