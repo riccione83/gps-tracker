@@ -1,0 +1,9 @@
+.leaflet-container {
+  height: 100%;
+  background: blue;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+  transition-timing-function: linear;
+  transition-duration: 100ms;
+}

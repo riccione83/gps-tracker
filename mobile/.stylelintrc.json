@@ -1,0 +1,12 @@
+{
+  "extends": ["stylelint-config-xo-scss", "stylelint-config-prettier"],
+  "plugins": ["stylelint-scss", "stylelint-prettier"],
+  "rules": {
+    "prettier/prettier": true,
+    "block-no-empty": null,
+    "no-descending-specificity": null,
+    "scss/at-import-partial-extension": null,
+    "@typescript-eslint/no-shadow": 0,
+    "react-native/no-inline-styles": 0
+  }
+}
