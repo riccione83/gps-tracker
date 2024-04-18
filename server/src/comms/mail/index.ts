@@ -4,16 +4,14 @@ import path from "path";
 import fs from "node:fs";
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT),
   secure: false, // Use `true` for port 465, `false` for all other ports
   auth: {
-    user: "rizzo.riccardo.83@gmail.com",
-    pass: "nxdwpggfirxyicva",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
   },
 });
-
-type Template = "test" | "email_validation";
 
 export const sendEmailValidation = (email: string, token: string) => {
   let t = "/templates/validate-email.hbs";

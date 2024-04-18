@@ -8,6 +8,10 @@ declare global {
       DB_PASSWORD: string;
       DB_URL: string;
       DB_PORT: string;
+      EMAIL_HOST: string;
+      EMAIL_PORT: string;
+      EMAIL_USER: string;
+      EMAIL_PASSWORD: string;
     }
   }
 }
