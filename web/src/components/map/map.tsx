@@ -7,7 +7,6 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import useMeasure from "react-use/lib/useMeasure";
 import "./map.css";
 
 const MapComponent: React.FC<{ children; center?; bounds? }> = ({
@@ -18,6 +17,11 @@ const MapComponent: React.FC<{ children; center?; bounds? }> = ({
   const ZOOM_LEVEL = 9;
   const mapRef = useRef<any>(null);
   const [useBounds, setUseBounds] = useState(true);
+  const [isLoaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setLoaded(true);
+  }, []);
 
   useEffect(() => {
     center &&
@@ -44,7 +48,9 @@ const MapComponent: React.FC<{ children; center?; bounds? }> = ({
     return null;
   }
 
-  const [ref, { width, height }] = useMeasure();
+  // const [ref, { width, height }] = useMeasure();
+
+  if (!isLoaded) return null;
 
   function SetBoundsRectangles() {
     const [_bounds, setBounds] = useState(bounds);
@@ -66,7 +72,7 @@ const MapComponent: React.FC<{ children; center?; bounds? }> = ({
   return (
     <div
       className="container"
-      ref={ref}
+      // ref={ref}
       style={{
         width: 200,
         height: 300,

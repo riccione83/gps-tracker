@@ -15,6 +15,7 @@ import {
   MdDelete as DeleteIcon,
 } from "react-icons/md";
 import "./style.css";
+import CalendarComponent from "@/components/calendar";
 
 const DevicePage = () => {
   const router = useRouter();

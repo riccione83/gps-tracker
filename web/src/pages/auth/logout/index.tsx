@@ -5,12 +5,10 @@ import { useEffect } from "react";
 
 const LogoutPage = () => {
   const router = useRouter();
-  // const { logout } = useAuth();
   const dispatch = useAppDispatch();
   useEffect(() => {
-    // logout();
     dispatch(setUserState(undefined));
-    router.push("/login");
+    router.push("/auth/login");
   }, []);
   return <div>Loggin out</div>;
 };

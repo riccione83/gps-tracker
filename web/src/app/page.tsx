@@ -2,8 +2,8 @@
 import isAuth from "@/components/protected-route";
 import "../styles/global.css";
 
-// function Home() {
-//   return null;
-// }
+function Home() {
+  return null;
+}
 
-// export default isAuth(Home);
+export default Home;

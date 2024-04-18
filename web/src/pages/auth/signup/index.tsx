@@ -22,11 +22,13 @@ import {
   InputRightElement,
 } from "@chakra-ui/react";
 import { FaUserAlt, FaLock } from "react-icons/fa";
+import { useMutation } from "@apollo/client";
+import { createUserMutation } from "@/queries";
 
 const CFaUserAlt = chakra(FaUserAlt);
 const CFaLock = chakra(FaLock);
 
-const LoginPage = () => {
+const Signup = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.user?.user);
@@ -34,6 +36,8 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleShowClick = () => setShowPassword(!showPassword);
+
+  const [createUser, { data, loading }] = useMutation(createUserMutation);
 
   useEffect(() => {
     if (user) {
@@ -45,30 +49,28 @@ const LoginPage = () => {
     event.preventDefault();
     setError(undefined);
     const formData = new FormData(event.currentTarget);
-    const email = formData.get("email");
-    const password = formData.get("password");
+    const email = formData.get("email")?.toString();
+    const password = formData.get("password")?.toString();
+    const name = formData.get("name")?.toString();
 
-    try {
-      const response = await fetch(API_URL + "/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      if (response.ok) {
-        const body = await response.json();
-        localStorage.setItem("login", JSON.stringify(body));
-        dispatch(setUserState(body as User));
-      } else {
-        const resp = await response.json();
-        setError(resp.error);
-      }
-    } catch {
-      setError("Unable to login, please try again later");
+    if (!email || !password || !name) {
+      setError("Please fill all information");
+      return;
     }
+
+    createUser({
+      variables: {
+        name,
+        email,
+        password,
+      },
+    })
+      .then((user) => {
+        router.replace("/auth/login");
+      })
+      .catch((error) => {
+        setError(error.message);
+      });
   }
 
   return (
@@ -87,7 +89,7 @@ const LoginPage = () => {
         alignItems="center"
       >
         <Avatar bg="teal.500" />
-        <Heading color="teal.400">Welcome</Heading>
+        <Heading color="teal.400">Register</Heading>
         <Box minW={{ base: "90%", md: "468px" }}>
           <form onSubmit={handleSubmit}>
             <Stack
@@ -96,6 +98,15 @@ const LoginPage = () => {
               backgroundColor="whiteAlpha.900"
               boxShadow="md"
             >
+              <FormControl>
+                <InputGroup>
+                  <InputLeftElement
+                    pointerEvents="none"
+                    children={<CFaUserAlt color="gray.300" />}
+                  />
+                  <Input type="text" placeholder="Full name" name="name" />
+                </InputGroup>
+              </FormControl>
               <FormControl>
                 <InputGroup>
                   <InputLeftElement
@@ -127,9 +138,6 @@ const LoginPage = () => {
                     </Button>
                   </InputRightElement>
                 </InputGroup>
-                <FormHelperText textAlign="right">
-                  <Link>forgot password?</Link>
-                </FormHelperText>
                 {error !== "" && (
                   <FormHelperText textAlign="center" color={"red"}>
                     {error}
@@ -143,20 +151,14 @@ const LoginPage = () => {
                 colorScheme="teal"
                 width="full"
               >
-                Login
+                Register
               </Button>
             </Stack>
           </form>
         </Box>
       </Stack>
-      <Box>
-        New to us?{" "}
-        <Link color="teal.500" href="/signup">
-          Sign Up
-        </Link>
-      </Box>
     </Flex>
   );
 };
 
-export default LoginPage;
+export default Signup;

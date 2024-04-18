@@ -1,6 +1,6 @@
 .leaflet-container {
   height: 100%;
-  background: blue;
+  /* background: blue; */
 }
 
 .leaflet-zoom-anim .leaflet-zoom-animated {

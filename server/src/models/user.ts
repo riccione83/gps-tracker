@@ -26,7 +26,7 @@ export class User {
   @Column()
   email: string;
 
-  @Column({ default: makeid(8) })
+  @Column()
   password: string;
 
   @Column({ default: false })

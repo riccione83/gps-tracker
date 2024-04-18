@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "https": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "codegen": "graphql-codegen-esm"
+    "codegen": "graphql-codegen-esm",
+    "dep": "yarn install --production --frozen-lockfile"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.1.1",
@@ -26,6 +28,7 @@
     "next": "14.1.4",
     "next-remove-imports": "^1.0.12",
     "react": "^18",
+    "react-datepicker": "^6.8.0",
     "react-dom": "^18",
     "react-icons": "^5.0.1",
     "react-leaflet": "^4.2.1",
@@ -45,6 +48,7 @@
     "@types/leaflet": "^1.9.9",
     "@types/node": "^20.12.5",
     "@types/react": "^18",
+    "@types/react-datepicker": "^6.2.0",
     "@types/react-dom": "^18",
     "@types/react-leaflet": "^3.0.0",
     "eslint": "^8",

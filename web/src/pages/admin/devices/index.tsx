@@ -6,7 +6,8 @@ import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import "./styles.css";
-import { Button } from "@chakra-ui/react";
+import { Button, Skeleton } from "@chakra-ui/react";
+import Loader from "@/components/loader";
 
 export default function DeviceManagementScene() {
   const [latestPositions, setLatestPosition] = useState<any | null>(null);
@@ -50,7 +51,7 @@ export default function DeviceManagementScene() {
     }
   }, [devicesList]);
 
-  if (latestPositionsLoading) return "Loading";
+  if (latestPositionsLoading) return <Loader />;
 
   return (
     <div>

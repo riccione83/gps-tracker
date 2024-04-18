@@ -15,6 +15,7 @@ import {
   useColorModeValue,
   useBreakpointValue,
   useDisclosure,
+  Link,
 } from "@chakra-ui/react";
 import {
   HamburgerIcon,
@@ -49,7 +50,7 @@ export default function WithSubnavigation() {
     return [
       {
         label: "Devices",
-        href: "/web",
+        href: undefined,
         children: devices!.map((d) => {
           return {
             label: d.description ?? "",
@@ -75,7 +76,8 @@ export default function WithSubnavigation() {
   return (
     <Box position="sticky" top={0} zIndex={999}>
       <Flex
-        bg={useColorModeValue("white", "gray.800")}
+        // bg={useColorModeValue("white", "gray.800")}
+        backgroundColor="gray.200"
         color={useColorModeValue("gray.600", "white")}
         minH={"60px"}
         py={{ base: 2 }}
@@ -105,7 +107,7 @@ export default function WithSubnavigation() {
             fontFamily={"heading"}
             color={useColorModeValue("gray.800", "white")}
           >
-            Logo
+            <Link href="/web">Logo</Link>
           </Text>
 
           <Flex display={{ base: "none", md: "flex" }} ml={10}>
@@ -151,7 +153,7 @@ export default function WithSubnavigation() {
               fontSize={"sm"}
               fontWeight={400}
               variant={"link"}
-              href={"logout"}
+              href={"/auth/logout"}
             >
               Logout
             </Button>
@@ -224,14 +226,14 @@ const DesktopSubNav = ({ label, href, subLabel }: NavItem) => {
       display={"block"}
       p={2}
       rounded={"md"}
-      _hover={{ bg: useColorModeValue("pink.50", "gray.900") }}
+      _hover={{ bg: useColorModeValue("gray.50", "gray.900") }}
       style={{ zIndex: 9999 }}
     >
       <Stack direction={"row"} align={"center"}>
         <Box>
           <Text
             transition={"all .3s ease"}
-            _groupHover={{ color: "pink.400" }}
+            _groupHover={{ color: "gray.1000" }}
             fontWeight={500}
           >
             {label}

@@ -1,0 +1,8 @@
+.react-datepicker-popper {
+  z-index: 9999 !important;
+}
+
+.react-datepicker__input-container {
+  border-width: 1px;
+  border-radius: 4px;
+}

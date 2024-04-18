@@ -1,24 +1,27 @@
 "use client"; // this makes this component a client component
-import "leaflet/dist/leaflet.css";
+import CalendarComponent from "@/components/calendar";
+import Loader from "@/components/loader";
 import isAuth from "@/components/protected-route";
 import { Device } from "@/gql-generated/graphql";
-import {
-  getUserQuery,
-  gpsQuery,
-  latestGpsPositions,
-  userQuery,
-} from "@/queries";
-import { addDevices, setDevicesState } from "@/store/deviceSlice";
+import { getUserQuery, gpsQuery, latestGpsPositions } from "@/queries";
+import { addDevices } from "@/store/deviceSlice";
 import { useAppDispatch, useAppSelector } from "@/store/store";
 import { useLazyQuery, useQuery } from "@apollo/client";
-import L, { Icon } from "leaflet";
+import { Box, Flex } from "@chakra-ui/react";
+import "leaflet/dist/leaflet.css";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { Marker, Polyline, Popup, Tooltip } from "react-leaflet";
-import blueCircle from "../../components/map/assets/blue-circle.svg";
 
 const Map = dynamic(() => import("../../components/map/map"), {
+  ssr: false,
+});
+
+const MarkerComponent = dynamic(() => import("../../components/marker/index"), {
+  ssr: false,
+});
+
+const RouteComponent = dynamic(() => import("../../components/route/index"), {
   ssr: false,
 });
 
@@ -32,6 +35,7 @@ function Home() {
   const dispatch = useAppDispatch();
   const [latestPositions, setLatestPosition] = useState<any | null>(null);
   const [bounds, setBounds] = useState<any | null>(null);
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
   const { data, loading, error, refetch } = useQuery(getUserQuery, {
     variables: {
@@ -60,7 +64,11 @@ function Home() {
   }, [data, user]);
 
   useEffect(() => {
-    getLatestPositions();
+    getLatestPositions({
+      variables: {
+        userId: Number(user.id),
+      },
+    });
   }, [getLatestPositions]);
 
   useEffect(() => {
@@ -94,7 +102,7 @@ function Home() {
       }
       setLoggedIn(true);
     } else {
-      router.replace("/login");
+      router.replace("/auth/login");
     }
   }, [user, data]);
 
@@ -111,13 +119,13 @@ function Home() {
   }, [latestPositions]);
 
   if (loading) {
-    return "Loading";
+    return <Loader />;
   } else if (error) {
     return <div onClick={() => refetch()}>{error.message}</div>;
   }
 
   return !loggedIn ? (
-    "Loading"
+    <Loader />
   ) : (
     <>
       <div
@@ -164,9 +172,18 @@ function Home() {
               </div>
             </div>
           )}
-          <div className="container">
-            <h1 className="text-center-mt-5">Where was your device?</h1>
-          </div>
+          <Flex justifyContent={"space-between"} padding={2}>
+            <Box>Where was your device?</Box>
+            {param && (
+              <Box>
+                Select a range{" "}
+                <CalendarComponent
+                  startDate={currentDate}
+                  onChange={(date) => setCurrentDate(date)}
+                />
+              </Box>
+            )}
+          </Flex>
           <Map
             center={param ? gpsPositions?.positions?.at(0) : undefined}
             bounds={!param && bounds ? bounds : undefined}
@@ -234,47 +251,5 @@ function Home() {
     </>
   );
 }
-
-interface MarkerProps {
-  lat: number | null | undefined;
-  lng: number | null | undefined;
-  timestamp?: string;
-  text?: string | null | undefined;
-}
-const MarkerComponent = ({ lat, lng, timestamp, text }: MarkerProps) => {
-  if (!lat || !lng) return null;
-  const pos = new L.LatLng(lat, lng, 0);
-  return (
-    <Marker
-      title="test"
-      position={pos}
-      icon={
-        new Icon({
-          iconUrl: blueCircle.src,
-          iconSize: [25, 41],
-          iconAnchor: [12, 20],
-        })
-      }
-    >
-      {timestamp && (
-        <Popup>Current time is {new Date(timestamp).toISOString()}</Popup>
-      )}
-      {text && (
-        <Tooltip direction="right" offset={[6, 0]} opacity={1} permanent>
-          <span>{text}</span>
-        </Tooltip>
-      )}
-    </Marker>
-  );
-};
-
-const RouteComponent = ({ positions }) => {
-  const pos = positions.map((p) => new L.LatLng(p.latitude, p.longitude, 0));
-  return (
-    <>
-      <Polyline positions={pos} color="red" />
-    </>
-  );
-};
 
 export default isAuth(Home);
