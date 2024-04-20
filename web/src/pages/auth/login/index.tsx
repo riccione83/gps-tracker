@@ -143,7 +143,7 @@ const LoginPage = () => {
                 colorScheme="teal"
                 width="full"
               >
-                Register
+                Login
               </Button>
             </Stack>
           </form>

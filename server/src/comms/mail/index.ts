@@ -1,8 +1,9 @@
 import handlebars from "handlebars";
 import nodemailer from "nodemailer";
 import path from "path";
-import fs from "node:fs";
+import fs from "fs";
 
+// Create a nodemailer transporter
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: Number(process.env.EMAIL_PORT),
@@ -13,39 +14,43 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Function to send email validation
 export const sendEmailValidation = (email: string, token: string) => {
-  let t = "/templates/validate-email.hbs";
-
-  const emailTemplateSource = fs.readFileSync(path.join(__dirname, t), "utf8");
-
-  const template = handlebars.compile(emailTemplateSource);
-  const htmlToSend = template({ token: token });
-
-  console.info(htmlToSend);
+  // Define the path to the email template
+  const templatePath = "/templates/validate-email.hbs";
+  // Read the email template source from the file
+  const emailTemplateSource = fs.readFileSync(
+    path.join(__dirname, templatePath),
+    "utf8"
+  );
+  // Compile the template using Handlebars
+  const compiledTemplate = handlebars.compile(emailTemplateSource);
+  // Generate the HTML content to be sent in the email
+  const htmlContent = compiledTemplate({ token: token });
+  // Send the email with the generated content
   sendEmail(
     email,
     "Validate your account",
     "Please validate your account",
-    htmlToSend
+    htmlContent
   );
 };
 
-// async..await is not allowed in global scope, must use a wrapper
+// Function to send email
 export async function sendEmail(
   to: string,
   subject: string,
   text: string,
   html?: string
 ) {
-  // send mail with defined transport object
+  // Send mail with defined transport object
   const info = await transporter.sendMail({
     from: '"Trackme" <trackme@gmail.com>', // sender address
     to: to, // list of receivers
     subject: subject, // Subject line
-    text: text, // plain text body
-    html: html, // html body
+    text: text, // Plain text body
+    html: html, // HTML body
   });
-
   console.log("Message sent: %s", info.messageId);
   console.log("Preview: %s", nodemailer.getTestMessageUrl(info));
 }

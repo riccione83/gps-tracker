@@ -14,6 +14,7 @@ import { sendEmailValidation } from "../comms/mail";
 import { Device } from "../models/device";
 import { GPSPosition } from "../models/position";
 import { User, makeid } from "../models/user";
+import { LessThan, MoreThan, Raw } from "typeorm";
 var passwordHash = require("password-hash");
 
 const DateTimeScalar = new GraphQLScalarType({
@@ -71,6 +72,9 @@ const GPSGraphType = new GraphQLObjectType({
     latitude: { type: GraphQLFloat },
     longitude: { type: GraphQLFloat },
     timestamp: { type: DateTimeScalar },
+    speed: { type: GraphQLFloat },
+    satellites: { type: GraphQLFloat },
+    accuracy: { type: GraphQLFloat },
   }),
 });
 
@@ -169,21 +173,33 @@ const QueryRoot = new GraphQLObjectType({
       type: new GraphQLList(GPSGraphType),
       args: {
         deviceId: { type: new GraphQLNonNull(GraphQLInt) },
-        from: { type: DateTimeScalar },
-        to: { type: DateTimeScalar },
+        for: { type: DateTimeScalar },
       },
       resolve: async (parent: any, args: any, context: MyContext) => {
         const device = await context.db.manager.findOne(Device, {
           where: { id: args.deviceId },
         });
         if (device) {
+          const from = args.for
+            ? new Date(args.for.setHours(0, 0, 0, 0)).toISOString()
+            : new Date().toISOString();
+          const to = args.for
+            ? new Date(args.for.setHours(23, 59, 59, 0)).toISOString()
+            : new Date().toISOString();
           const gps = await context.db.manager.find(GPSPosition, {
             where: {
               device: device,
+              timestamp:
+                args.for &&
+                Raw((alias) => `${alias} >= :from AND ${alias} <= :to`, {
+                  from,
+                  to,
+                }),
             },
             relations: {
               device: true,
             },
+            order: { timestamp: "ASC" },
           });
           return gps;
         }

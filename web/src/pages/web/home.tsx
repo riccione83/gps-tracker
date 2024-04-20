@@ -6,12 +6,15 @@ import { Device } from "@/gql-generated/graphql";
 import { getUserQuery, gpsQuery, latestGpsPositions } from "@/queries";
 import { addDevices } from "@/store/deviceSlice";
 import { useAppDispatch, useAppSelector } from "@/store/store";
+import { multiOptions } from "@/utils/fleetmap";
+import { getFormattedDistance, getTotalDistance } from "@/utils/gps";
 import { useLazyQuery, useQuery } from "@apollo/client";
 import { Box, Flex } from "@chakra-ui/react";
 import "leaflet/dist/leaflet.css";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { MdArrowBack as BackIcon } from "react-icons/md";
 
 const Map = dynamic(() => import("../../components/map/map"), {
   ssr: false,
@@ -64,12 +67,13 @@ function Home() {
   }, [data, user]);
 
   useEffect(() => {
-    getLatestPositions({
-      variables: {
-        userId: Number(user.id),
-      },
-    });
-  }, [getLatestPositions]);
+    user &&
+      getLatestPositions({
+        variables: {
+          userId: Number(user.id),
+        },
+      });
+  }, [getLatestPositions, user]);
 
   useEffect(() => {
     if (param) {
@@ -80,6 +84,7 @@ function Home() {
         getGpsPositions({
           variables: {
             deviceId: Number(curr?.id),
+            for: currentDate,
           },
           pollInterval: 6000,
           fetchPolicy: "no-cache",
@@ -92,7 +97,7 @@ function Home() {
         },
       });
     }
-  }, [param, devicesList]);
+  }, [param, devicesList, currentDate]);
 
   useLayoutEffect(() => {
     if (user) {
@@ -117,6 +122,19 @@ function Home() {
         : undefined
     );
   }, [latestPositions]);
+
+  const totalDistance = useMemo(() => {
+    const gps =
+      gpsPositions?.positions
+        ?.filter((p) => p && p.latitude && p.longitude)
+        .map((p) => {
+          return {
+            lat: p!.latitude ?? 0,
+            lng: p!.longitude ?? 0,
+          };
+        }) ?? [];
+    return getTotalDistance(gps);
+  }, [gpsPositions]);
 
   if (loading) {
     return <Loader />;
@@ -145,35 +163,31 @@ function Home() {
             height: "calc(100%)",
           }}
         >
-          {currentDevice && (
-            <div
-              style={{
-                marginTop: 32,
-                // borderTop: "1px solid grey",
-                display: "flex",
-                flexDirection: "row",
-              }}
-            >
-              <div
-                key={currentDevice?.serial}
-                onClick={() => router.push(`/device?d=${currentDevice.id}`)}
-                style={{
-                  border: "1px solid grey",
-                  padding: 16,
-                  textAlign: "center",
-                  marginBottom: 8,
-                  cursor: "pointer",
-                  marginRight: 8,
-                  borderRadius: 4,
-                  background: "grey",
-                }}
-              >
-                Data for {currentDevice?.description}
-              </div>
-            </div>
-          )}
           <Flex justifyContent={"space-between"} padding={2}>
-            <Box>Where was your device?</Box>
+            {!param ? (
+              <Box>Your devices</Box>
+            ) : (
+              <Flex align={"baseline"}>
+                <BackIcon
+                  style={{ cursor: "pointer", marginRight: 8 }}
+                  onClick={() => router.back()}
+                />
+                <div
+                  key={currentDevice?.serial}
+                  onClick={() =>
+                    currentDevice &&
+                    router.push(`/device?d=${currentDevice.id}`)
+                  }
+                  style={{
+                    padding: 4,
+                    textAlign: "center",
+                    cursor: "pointer",
+                  }}
+                >
+                  {currentDevice?.description}
+                </div>
+              </Flex>
+            )}
             {param && (
               <Box>
                 Select a range{" "}
@@ -184,6 +198,11 @@ function Home() {
               </Box>
             )}
           </Flex>
+          {param && (
+            <Flex justifyContent={"space-between"} padding={2}>
+              Total distance: {getFormattedDistance(totalDistance)}
+            </Flex>
+          )}
           <Map
             center={param ? gpsPositions?.positions?.at(0) : undefined}
             bounds={!param && bounds ? bounds : undefined}
@@ -191,7 +210,11 @@ function Home() {
             {param ? (
               <>
                 {gpsPositions?.positions && (
-                  <RouteComponent positions={gpsPositions?.positions} />
+                  // <RouteComponent positions={gpsPositions?.positions} />
+                  <RouteComponent
+                    positions={gpsPositions?.positions}
+                    {...multiOptions["speed"]}
+                  />
                 )}
                 {gpsPositions &&
                   gpsPositions.positions &&

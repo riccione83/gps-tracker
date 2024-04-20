@@ -70,7 +70,9 @@ export default function LoginScreen({navigation}: any) {
             .then(async response => {
               console.info('Logged in', response.data);
               setCurrentUser(response.data);
-              await storeData(response.data);
+              const _user = response.data;
+              _user.password = user.password;
+              await storeData(_user);
             })
             .catch(error => setError(error.message));
         }
@@ -89,7 +91,7 @@ export default function LoginScreen({navigation}: any) {
     login(email, password)
       .then(async response => {
         setCurrentUser(response.data);
-        await storeData(response.data);
+        await storeData({...response.data, password: password});
       })
       .catch(error => (console.info(error) as any) || setError(error.message));
   };

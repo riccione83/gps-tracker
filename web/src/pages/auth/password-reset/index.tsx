@@ -1,4 +1,5 @@
 "use client"; //
+import { API_URL } from "@/constrant";
 import { createUserMutation } from "@/queries";
 import { useAppSelector } from "@/store/store";
 import { useMutation } from "@apollo/client";
@@ -24,7 +25,7 @@ import { FaLock, FaUserAlt } from "react-icons/fa";
 const CFaUserAlt = chakra(FaUserAlt);
 const CFaLock = chakra(FaLock);
 
-const Signup = () => {
+const PasswordResetPage = () => {
   const router = useRouter();
   const user = useAppSelector((state) => state.user?.user);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -52,19 +53,29 @@ const Signup = () => {
     const formData = new FormData(event.currentTarget);
     const newPassword = formData.get("password")?.toString();
 
-    // createUser({
-    //   variables: {
-    //     name,
-    //     email,
-    //     password,
-    //   },
-    // })
-    //   .then((user) => {
-    //     router.replace("/auth/login");
-    //   })
-    //   .catch((error) => {
-    //     setError(error.message);
-    //   });
+    fetch(API_URL + "/password-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: "1",
+        password: newPassword,
+        token: "aaa",
+      }),
+    })
+      .then(async (response) => {
+        if (response.ok) {
+          const body = await response.text();
+          console.info("Response OK:", body);
+          router.replace("/auth/logout");
+        } else {
+          const resp = await response.text();
+          setError(resp);
+          console.info("Response ERROR:", resp);
+        }
+      })
+      .catch(async (e) => {
+        console.info("Response ERROR:", e);
+      });
   }
 
   return (
@@ -158,4 +169,4 @@ const Signup = () => {
   );
 };
 
-export default Signup;
+export default PasswordResetPage;

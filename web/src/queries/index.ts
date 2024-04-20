@@ -28,11 +28,13 @@ query GetUser($userId: Int!) {
 }
 `);
 
-const gpsQuery = gql(`query GetPositions($deviceId: Int!) {
-    positions(deviceId: $deviceId) {
+const gpsQuery = gql(`query GetPositions($deviceId: Int!, $for: Date) {
+    positions(deviceId: $deviceId, for: $for) {
       latitude
       longitude
       timestamp
+      speed
+      satellites
     }
   }`);
 
@@ -89,6 +91,8 @@ const latestGpsPositions = gql(`query GetLatestPositions($userId: Int!) {
       latitude
       longitude
       timestamp
+      speed
+      satellites
     }
   }
 }`);

@@ -5,7 +5,6 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { User } from "./user";
 import { Device } from "./device";
 
 @Entity()
@@ -18,6 +17,15 @@ export class GPSPosition {
 
   @Column("decimal", { precision: 10, scale: 6 })
   longitude: number;
+
+  @Column("decimal", { default: -1 })
+  speed: number;
+
+  @Column("decimal", { default: -1 })
+  satellites: number;
+
+  @Column("decimal", { default: -1 })
+  accuracy: number;
 
   @Column()
   timestamp: Date;

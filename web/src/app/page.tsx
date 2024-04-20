@@ -3,7 +3,7 @@ import isAuth from "@/components/protected-route";
 import "../styles/global.css";
 
 function Home() {
-  return null;
+  return <div>sss</div>;
 }
 
 export default Home;

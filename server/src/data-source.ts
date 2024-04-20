@@ -1,9 +1,11 @@
+import dotenv from "dotenv";
+import fs from "node:fs";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { DataSource } from "typeorm";
-import { User } from "./models/user";
 import { Device } from "./models/device";
 import { GPSPosition } from "./models/position";
-import dotenv from "dotenv";
-import fs from "fs";
+import { User } from "./models/user";
 
 dotenv.config({ debug: false });
 
@@ -22,12 +24,12 @@ export const AppDataSource = new DataSource({
     : undefined,
   port: Number(process.env.DB_PORT),
   database: process.env.DB_NAME,
-  synchronize: false,
-  logging: false,
-  // entities: [User, Device, GPSPosition],
+  synchronize: true,
+  logging: true,
+  entities: [User, Device, GPSPosition],
   subscribers: [],
   // migrations: [],
   migrationsTableName: "migrations",
-  entities: [`${__dirname}/models/*.ts`],
+  // entities: [`${__dirname}/models/*.ts`],
   migrations: [`${__dirname}/migrations/*.ts`],
 });

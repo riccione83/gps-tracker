@@ -1,6 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Device } from "./device";
-import { GPSPosition } from "./position";
 
 export function makeid(length) {
   let result = "";
