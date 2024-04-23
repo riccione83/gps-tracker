@@ -60,6 +60,5 @@
     "ruru": "^2.0.0-beta.11",
     "string-width": "4.2.3",
     "typeorm": "^0.3.20"
-  },
-  "packageManager": "yarn@4.1.1"
+  }
 }
