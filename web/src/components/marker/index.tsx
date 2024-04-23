@@ -6,10 +6,17 @@ interface MarkerProps {
   lat: number | null | undefined;
   lng: number | null | undefined;
   timestamp?: string;
+  activity?: string;
   text?: string | null | undefined;
 }
 
-const MarkerComponent = ({ lat, lng, timestamp, text }: MarkerProps) => {
+const MarkerComponent = ({
+  lat,
+  lng,
+  timestamp,
+  text,
+  activity,
+}: MarkerProps) => {
   if (!lat || !lng) return null;
   const pos = new L.LatLng(lat, lng, 0);
   return (
@@ -30,6 +37,7 @@ const MarkerComponent = ({ lat, lng, timestamp, text }: MarkerProps) => {
       {text && (
         <Tooltip direction="right" offset={[6, 0]} opacity={1} permanent>
           <span>{text}</span>
+          {activity && <span> ({activity})</span>}
         </Tooltip>
       )}
     </Marker>

@@ -8,6 +8,7 @@ import { useSelector } from "react-redux";
 import "./styles.css";
 import { Button, Skeleton } from "@chakra-ui/react";
 import Loader from "@/components/loader";
+import { formatDistance } from "date-fns/formatDistance";
 
 export default function DeviceManagementScene() {
   const [latestPositions, setLatestPosition] = useState<any | null>(null);
@@ -81,7 +82,10 @@ export default function DeviceManagementScene() {
                   <td>{p?.serial}</td>
                   <td>
                     {latest && latest.coord
-                      ? `${new Date(latest.coord.timestamp).toISOString()}`
+                      ? `${formatDistance(
+                          new Date(latest.coord.timestamp),
+                          new Date()
+                        )} ago`
                       : "NA"}
                   </td>
                   <td>

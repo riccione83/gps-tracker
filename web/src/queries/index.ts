@@ -35,6 +35,8 @@ const gpsQuery = gql(`query GetPositions($deviceId: Int!, $for: Date) {
       timestamp
       speed
       satellites
+      accuracy
+      activity
     }
   }`);
 
@@ -60,6 +62,10 @@ const deviceQuery = gql(`query GetDevice($id: Int!) {
       latitude
       longitude
       timestamp
+      accuracy
+      activity
+      speed
+      satellites
     }
   }
 }`);
@@ -93,6 +99,8 @@ const latestGpsPositions = gql(`query GetLatestPositions($userId: Int!) {
       timestamp
       speed
       satellites
+      accuracy
+      activity
     }
   }
 }`);

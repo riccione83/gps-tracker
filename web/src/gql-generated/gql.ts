@@ -15,13 +15,13 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
 const documents = {
     "query GetUsers {\n    users {\n      id\n      name\n      email\n      devices {\n        serial\n        id\n        description\n      }\n    }\n  }": types.GetUsersDocument,
     "\nquery GetUser($userId: Int!) {\n    user(id: $userId) {\n      id\n      name\n      email\n      devices {\n        serial\n        description\n        id\n      }\n    }\n}\n": types.GetUserDocument,
-    "query GetPositions($deviceId: Int!, $for: Date) {\n    positions(deviceId: $deviceId, for: $for) {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n    }\n  }": types.GetPositionsDocument,
+    "query GetPositions($deviceId: Int!, $for: Date) {\n    positions(deviceId: $deviceId, for: $for) {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n      accuracy\n      activity\n    }\n  }": types.GetPositionsDocument,
     "mutation CreateDevice($userId: Int!,$serial: String!,$description: String!){\n    createDevice(userId: $userId, serial:$serial, description:$description) {\n    id\n    serial\n    description\n  }\n}": types.CreateDeviceDocument,
     "mutation DeleteDevice($id: Int!){\n  deleteDevice(id: $id)\n}": types.DeleteDeviceDocument,
-    "query GetDevice($id: Int!) {\n  device(id: $id) {\n    id\n    serial\n    description\n    positions {\n      latitude\n      longitude\n      timestamp\n    }\n  }\n}": types.GetDeviceDocument,
+    "query GetDevice($id: Int!) {\n  device(id: $id) {\n    id\n    serial\n    description\n    positions {\n      latitude\n      longitude\n      timestamp\n      accuracy\n      activity\n      speed\n      satellites\n    }\n  }\n}": types.GetDeviceDocument,
     "mutation EditDevice($deviceId: Int!, $description: String!) {\n  editDevice(deviceId: $deviceId, description: $description) {\n    id\n    serial\n    description\n  }\n}": types.EditDeviceDocument,
     "\nmutation CreateUser($name: String!, $email: String!, $password: String!) {\n  createUser(name: $name, email: $email, password: $password) {\n    id\n    name\n    email\n  }\n}": types.CreateUserDocument,
-    "query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    id\n    serial\n    coord {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n    }\n  }\n}": types.GetLatestPositionsDocument,
+    "query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    id\n    serial\n    coord {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n      accuracy\n      activity\n    }\n  }\n}": types.GetLatestPositionsDocument,
 };
 
 /**
@@ -49,7 +49,7 @@ export function gql(source: "\nquery GetUser($userId: Int!) {\n    user(id: $use
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "query GetPositions($deviceId: Int!, $for: Date) {\n    positions(deviceId: $deviceId, for: $for) {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n    }\n  }"): (typeof documents)["query GetPositions($deviceId: Int!, $for: Date) {\n    positions(deviceId: $deviceId, for: $for) {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n    }\n  }"];
+export function gql(source: "query GetPositions($deviceId: Int!, $for: Date) {\n    positions(deviceId: $deviceId, for: $for) {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n      accuracy\n      activity\n    }\n  }"): (typeof documents)["query GetPositions($deviceId: Int!, $for: Date) {\n    positions(deviceId: $deviceId, for: $for) {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n      accuracy\n      activity\n    }\n  }"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -61,7 +61,7 @@ export function gql(source: "mutation DeleteDevice($id: Int!){\n  deleteDevice(i
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "query GetDevice($id: Int!) {\n  device(id: $id) {\n    id\n    serial\n    description\n    positions {\n      latitude\n      longitude\n      timestamp\n    }\n  }\n}"): (typeof documents)["query GetDevice($id: Int!) {\n  device(id: $id) {\n    id\n    serial\n    description\n    positions {\n      latitude\n      longitude\n      timestamp\n    }\n  }\n}"];
+export function gql(source: "query GetDevice($id: Int!) {\n  device(id: $id) {\n    id\n    serial\n    description\n    positions {\n      latitude\n      longitude\n      timestamp\n      accuracy\n      activity\n      speed\n      satellites\n    }\n  }\n}"): (typeof documents)["query GetDevice($id: Int!) {\n  device(id: $id) {\n    id\n    serial\n    description\n    positions {\n      latitude\n      longitude\n      timestamp\n      accuracy\n      activity\n      speed\n      satellites\n    }\n  }\n}"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -73,7 +73,7 @@ export function gql(source: "\nmutation CreateUser($name: String!, $email: Strin
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    id\n    serial\n    coord {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n    }\n  }\n}"): (typeof documents)["query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    id\n    serial\n    coord {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n    }\n  }\n}"];
+export function gql(source: "query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    id\n    serial\n    coord {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n      accuracy\n      activity\n    }\n  }\n}"): (typeof documents)["query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    id\n    serial\n    coord {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n      accuracy\n      activity\n    }\n  }\n}"];
 
 export function gql(source: string) {
   return (documents as any)[source] ?? {};

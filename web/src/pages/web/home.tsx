@@ -256,12 +256,14 @@ function Home() {
             ) : (
               <>
                 {latestPositions?.latestPosition?.map((p) => {
+                  console.info(p);
                   return (
                     <MarkerComponent
                       key={JSON.stringify(p)}
                       lat={p?.coord?.latitude}
                       lng={p?.coord?.longitude}
                       text={p?.description}
+                      activity={p?.activity}
                       timestamp={undefined}
                     />
                   );
