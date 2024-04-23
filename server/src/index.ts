@@ -199,6 +199,7 @@ export const serverPromise = new Promise((resolve, reject) => {
             satellites: req.body.satellites ? Number(req.body.satellites) : -1,
             speed: req.body.speed ? Number(req.body.speed) : -1,
             accuracy: req.body.accuracy ? Number(req.body.accuracy) : -1,
+            activity: req.body.activity,
             device: device,
           });
           res.send("OK");

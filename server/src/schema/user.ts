@@ -75,6 +75,7 @@ const GPSGraphType = new GraphQLObjectType({
     speed: { type: GraphQLFloat },
     satellites: { type: GraphQLFloat },
     accuracy: { type: GraphQLFloat },
+    activity: { type: GraphQLString },
   }),
 });
 

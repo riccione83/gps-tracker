@@ -1,53 +1,41 @@
-import {
-  Button,
-  PermissionsAndroid,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
-} from 'react-native';
-import Geolocation from 'react-native-geolocation-service';
-import {useLazyQuery, useMutation, useQuery} from '@apollo/client';
-import {View, Text} from '../components/Themed';
+import {useLazyQuery, useMutation} from '@apollo/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useFocusEffect} from '@react-navigation/native';
 import axios from 'axios';
 import React, {useEffect, useState} from 'react';
+import {Button, ScrollView, StyleSheet, Switch} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
+import useTracking from '../components/BackgroundTraking';
+import {Text, View} from '../components/Themed';
+import BottomSlidingView from '../components/bottomslidingview';
 import MapComponent from '../components/map';
 import ModalComponent from '../components/modal';
 import {BASE_URL} from '../constants/App';
 import {
-  checkDeviceQuery,
   createDeviceMutation,
   devicesQuery,
   latestGpsPositions,
-  userQuery,
 } from '../queries';
-import BottomSlidingView from '../components/bottomslidingview';
+import useDevice from '../components/hooks/use-device';
 
-interface GPSPacket {
+export interface GPSPacket {
   latitude: number;
   longitude: number;
   device: number;
+  speed: number;
+  altitude: number;
+  accuracy: number;
+  activity: string | null;
 }
 
 export default function MainScreen({navigation}: any) {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
-  const [currentDevice, setCurrentDevice] = useState<any | null>(null);
-  const [currentDeviceDisplay, setCurrentDeviceDisplay] = useState<any | null>(
-    null,
-  );
   const [isEnabled, setIsEnabled] = useState(true);
   const toggleSwitch = () => setIsEnabled(previousState => !previousState);
-  const [location, setLocation] = useState<Geolocation.GeoPosition | null>(
-    null,
-  );
   const [createDeviceModal, setCreateDeviceModal] = useState(false);
 
-  const [checkDevice] = useLazyQuery(checkDeviceQuery, {
-    fetchPolicy: 'network-only',
-  });
+  const {location, backgroud, pause} = useTracking(isEnabled);
+  const {currentDevice, currentDeviceDisplay} = useDevice();
 
   const [getPositionForDevice, {data: selectedDevicePosition}] = useLazyQuery(
     latestGpsPositions,
@@ -56,61 +44,17 @@ export default function MainScreen({navigation}: any) {
     },
   );
 
-  console.info(selectedDevicePosition);
-
   const [createDevice] = useMutation(createDeviceMutation, {
     fetchPolicy: 'network-only',
   });
 
   const [getDeviceList, {data: devices}] = useLazyQuery(devicesQuery);
 
-  // Function to get permission for location
-  const requestLocationPermission = async () => {
-    if (Platform.OS === 'ios') {
-      // your code using Geolocation and asking for authorisation with
-      return Geolocation.requestAuthorization('always');
-    } else {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      );
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        return Promise.resolve<boolean>(true);
-      } else {
-        return Promise.reject();
-      }
-    }
-  };
-
-  const getLocation = () => {
-    const result = requestLocationPermission();
-    result.then(res => {
-      if (res) {
-        currentDevice &&
-          Geolocation.getCurrentPosition(
-            async position => {
-              setLocation(position);
-              const newPacket: GPSPacket = {
-                device: Number(currentDevice.id),
-                latitude: Number(position.coords.latitude.toFixed(6)),
-                longitude: Number(position.coords.longitude.toFixed(6)),
-              };
-              await sendGPSPacket(newPacket);
-            },
-            () => {
-              // See error code charts below.
-              setLocation(null);
-            },
-            {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
-          );
-      }
-    });
-  };
-
   const sendGPSPacket = async (gps: GPSPacket) => {
     axios
       .post(BASE_URL + '/gps', gps)
-      // .then(response => console.info('Sent GPS packet:', response.data))
-      .catch(error => console.info('Error on GPS packet', error));
+      .then(response => console.info('Sent GPS packet:', response.data))
+      .catch(error => console.info('Error on GPS packet', error, gps));
   };
 
   const getData = async () => {
@@ -148,48 +92,56 @@ export default function MainScreen({navigation}: any) {
       if (!currentUser) {
         uData();
       }
-      if (!currentDevice) {
-        DeviceInfo.getDeviceName().then(display => {
-          setCurrentDeviceDisplay(display);
-          const deviceId = DeviceInfo.getDeviceId() + '_' + display;
-          checkDevice({
-            variables: {
-              serial: deviceId,
-            },
-          })
-            .then(result => {
-              if (result.data?.checkDevice) {
-                setCurrentDevice(result.data?.checkDevice);
-              } else {
-                setCreateDeviceModal(true);
-              }
-            })
-            .catch(() => {});
-        });
-      }
-    }, [currentUser, currentDevice]),
+
+      // getDevice();
+      // if (!currentDevice) {
+      //   DeviceInfo.getDeviceName().then(display => {
+      //     setCurrentDeviceDisplay(display);
+      //     const deviceId = DeviceInfo.getDeviceId() + '_' + display;
+      //     checkDevice({
+      //       variables: {
+      //         serial: deviceId,
+      //       },
+      //     })
+      //       .then(result => {
+      //         if (result.data?.checkDevice) {
+      //           setCurrentDevice(result.data?.checkDevice);
+      //         } else {
+      //           setCreateDeviceModal(true);
+      //         }
+      //       })
+      //       .catch(() => {});
+      //   });
+      // }
+    }, [currentUser]),
   );
 
   useEffect(() => {
-    //Implementing the setInterval method
-    const interval = setInterval(() => {
-      isEnabled && currentUser && currentDevice && getLocation();
-    }, 5000);
+    // Implementing the setInterval method
 
+    const interval = setInterval(() => {
+      console.info(pause, backgroud, location, isEnabled);
+      if (!pause && !backgroud && location && isEnabled && !!location.device) {
+        console.info(location);
+        sendGPSPacket(location);
+      } else {
+        // console.info('No device found');
+      }
+    }, 5000);
     //Clearing the interval
     return () => clearInterval(interval);
-  }, [currentUser, currentDevice, isEnabled]);
+  }, [isEnabled, location, pause, backgroud, currentDevice]);
 
   const getMarker = () => {
     if (location && isEnabled) {
       return {
-        latitude: location?.coords.latitude,
-        longitude: location?.coords.longitude,
+        latitude: location?.latitude,
+        longitude: location?.longitude,
       };
     }
     if (selectedDevicePosition && currentDevice) {
       const selected = selectedDevicePosition.latestPosition.find(
-        d => d.description === currentDevice.description,
+        (d: any) => d.description === currentDevice.description,
       );
       if (!selected) {
         console.info('No device found', currentDevice, selectedDevicePosition);
@@ -203,6 +155,7 @@ export default function MainScreen({navigation}: any) {
 
     return undefined;
   };
+
   return (
     <View style={styles.container}>
       <View style={styles.appContainer}>
@@ -224,7 +177,7 @@ export default function MainScreen({navigation}: any) {
                   serial: deviceId,
                 },
                 onCompleted: d => {
-                  setCurrentDevice(d);
+                  // setCurrentDevice(d);
                   setCreateDeviceModal(false);
                 },
                 // refetchQueries: [checkDeviceQuery],
@@ -236,7 +189,10 @@ export default function MainScreen({navigation}: any) {
       </View>
 
       <View style={styles.mapContainer}>
-        <MapComponent showUserPosition={false} marker={getMarker()} />
+        <MapComponent
+          showUserPosition={location === null}
+          marker={getMarker()}
+        />
       </View>
 
       <BottomSlidingView>
@@ -276,7 +232,7 @@ export default function MainScreen({navigation}: any) {
           <Text>
             {isEnabled
               ? location
-                ? location.coords.latitude + ' ' + location.coords.longitude
+                ? location.latitude + ' ' + location.longitude
                 : 'Not started yet'
               : 'Position share not enabled'}
           </Text>
@@ -299,7 +255,7 @@ export default function MainScreen({navigation}: any) {
                       e.preventDefault();
                       e.stopPropagation();
                       console.info('Selected', d);
-                      setCurrentDevice(d);
+                      // setCurrentDevice(d);
                       // setIsEnabled(currentDeviceDisplay === d.description);
 
                       getPositionForDevice({

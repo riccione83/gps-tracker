@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
-    "ios": "react-native run-ios",
+    "ios": "react-native run-ios --udid '00008130-001168423861401C'",
     "sim": "react-native run-ios --udid 'C297D78D-ACFF-463F-83F7-41C86F8573D1'",
     "lint": "eslint .",
     "start": "react-native start",
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.9.10",
+    "@mak12/react-native-background-geolocation": "^0.7.7",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",

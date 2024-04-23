@@ -17,6 +17,7 @@ export default function MapComponent({marker, showUserPosition}: MapProps) {
     <MapView
       style={styles.map}
       showsUserLocation={showUserPosition}
+      followsUserLocation={showUserPosition}
       zoomEnabled
       onRegionChangeComplete={c =>
         setNewDelta({

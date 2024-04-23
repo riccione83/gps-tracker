@@ -27,6 +27,9 @@ export class GPSPosition {
   @Column("decimal", { default: -1 })
   accuracy: number;
 
+  @Column({ nullable: true })
+  activity?: string;
+
   @Column()
   timestamp: Date;
 

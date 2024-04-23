@@ -1,9 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useFocusEffect, useRoute} from '@react-navigation/native';
 import axios from 'axios';
 import React, {useEffect, useState} from 'react';
 import {Button, StyleSheet, Text, TextInput, View} from 'react-native';
 import {BASE_URL} from '../constants/App';
+import {getData, storeData} from '../utils/storage';
 
 export default function LoginScreen({navigation}: any) {
   const [email, setEmail] = useState('');
@@ -11,25 +11,6 @@ export default function LoginScreen({navigation}: any) {
   const [user, setCurrentUser] = useState<any | null>(null);
   const [error, setError] = useState('');
   const {path} = useRoute();
-
-  const storeData = async (value: any) => {
-    try {
-      console.info('Saving', value);
-      await AsyncStorage.setItem('userinfo', JSON.stringify(value));
-    } catch (e) {
-      // saving error
-      console.info('ERROR!!!!', e);
-    }
-  };
-
-  const getData = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem('userinfo');
-      return jsonValue != null ? JSON.parse(jsonValue) : null;
-    } catch (e) {
-      // error reading value
-    }
-  };
 
   const login = async (email: string, password: string) => {
     return axios.post(BASE_URL + '/login', {
@@ -64,7 +45,7 @@ export default function LoginScreen({navigation}: any) {
     React.useCallback(() => {
       console.info('Running useEffect', path);
       const uData = async () => {
-        const user = await getData();
+        const user = await getData('userinfo');
         if (user) {
           login(user.email, user.password)
             .then(async response => {
@@ -72,7 +53,7 @@ export default function LoginScreen({navigation}: any) {
               setCurrentUser(response.data);
               const _user = response.data;
               _user.password = user.password;
-              await storeData(_user);
+              await storeData('userinfo', _user);
             })
             .catch(error => setError(error.message));
         }
@@ -91,7 +72,7 @@ export default function LoginScreen({navigation}: any) {
     login(email, password)
       .then(async response => {
         setCurrentUser(response.data);
-        await storeData({...response.data, password: password});
+        await storeData('userinfo', {...response.data, password: password});
       })
       .catch(error => (console.info(error) as any) || setError(error.message));
   };
