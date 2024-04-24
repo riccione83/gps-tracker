@@ -17,7 +17,8 @@ import {
   latestGpsPositions,
 } from '../queries';
 import useDevice from '../components/hooks/use-device';
-
+// import Boundary, {Events} from 'react-native-boundary';
+import useBackgroundGeolocationTracker from '../components/hooks/background-tracking';
 export interface GPSPacket {
   latitude: number;
   longitude: number;
@@ -36,6 +37,38 @@ export default function MainScreen({navigation}: any) {
 
   const {location, backgroud, pause} = useTracking(isEnabled);
   const {currentDevice, currentDeviceDisplay} = useDevice();
+
+  // const [state, setState] = useState({
+  //   isEnter: false,
+  // });
+  // const loc = useBackgroundGeolocationTracker();
+  // console.info('From hook', loc);
+  console.log('useTraking latitude', location);
+
+  // useEffect(() => {
+  //   const BoundaryData = [
+  //     {
+  //       lat: 51.399925,
+  //       lng: -0.05063,
+  //       radius: 100,
+  //       id: 'Home',
+  //     },
+  //   ];
+  //   BoundaryData.map(boundary => {
+  //     Boundary.add(boundary)
+  //       .then(() => console.log('success!'))
+  //       .catch(e => console.log(e));
+  //   });
+
+  //   Boundary.on(Events.ENTER, id => {
+  //     console.warn('Enter Boundary ', id);
+  //     state.isEnter = true;
+  //   });
+  //   Boundary.on(Events.EXIT, id => {
+  //     console.warn('Exit Boundary ', id);
+  //     state.isEnter = false;
+  //   });
+  // }, []);
 
   const [getPositionForDevice, {data: selectedDevicePosition}] = useLazyQuery(
     latestGpsPositions,
@@ -121,7 +154,7 @@ export default function MainScreen({navigation}: any) {
 
     const interval = setInterval(() => {
       console.info(pause, backgroud, location, isEnabled);
-      if (!pause && !backgroud && location && isEnabled && !!location.device) {
+      if (!pause && location && isEnabled && !!location.device) {
         console.info(location);
         sendGPSPacket(location);
       } else {

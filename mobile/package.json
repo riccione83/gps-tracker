@@ -5,6 +5,7 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios --udid '00008130-001168423861401C'",
+    "prod": "react-native run-ios --udid '00008130-001168423861401C' --configuration Release",
     "sim": "react-native run-ios --udid 'C297D78D-ACFF-463F-83F7-41C86F8573D1'",
     "lint": "eslint .",
     "start": "react-native start",

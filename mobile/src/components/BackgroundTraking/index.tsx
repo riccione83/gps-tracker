@@ -1,4 +1,6 @@
-import BackgroundGeolocation from '@mak12/react-native-background-geolocation';
+import BackgroundGeolocation, {
+  ConfigureOptions,
+} from '@mak12/react-native-background-geolocation';
 import axios from 'axios';
 import {useEffect, useState} from 'react';
 import {Alert} from 'react-native';
@@ -6,6 +8,7 @@ import {isEnabled} from 'react-native/Libraries/Performance/Systrace';
 import {BASE_URL} from '../../constants/App';
 import {GPSPacket} from '../../main';
 import useDevice from '../hooks/use-device';
+import {getData} from '../../utils/storage';
 
 const useTracking = (enabled: boolean) => {
   const [backgroud, setBackground] = useState(false);
@@ -14,7 +17,7 @@ const useTracking = (enabled: boolean) => {
   const [currentLocation, setLocation] = useState<GPSPacket | null>(null);
   const {currentDevice} = useDevice();
 
-  const config = {
+  const config: ConfigureOptions = {
     desiredAccuracy: BackgroundGeolocation.MEDIUM_ACCURACY,
     stationaryRadius: 50, //50
     distanceFilter: 50, //50
@@ -28,6 +31,8 @@ const useTracking = (enabled: boolean) => {
     fastestInterval: 5000, //5000
     activitiesInterval: 5000, //10000
     stopOnStillActivity: false,
+    notificationsEnabled: true,
+    saveBatteryOnBackground: false,
   };
 
   useEffect(() => {
@@ -50,6 +55,10 @@ const useTracking = (enabled: boolean) => {
   }, [currentDevice]);
 
   useEffect(() => {
+    const getDevice = async () => {
+      return await getData('deviceinfo');
+    };
+
     BackgroundGeolocation.configure(config);
 
     BackgroundGeolocation.on('activity', activity => {
@@ -58,38 +67,43 @@ const useTracking = (enabled: boolean) => {
       setActivityType(activity.type);
     });
 
-    BackgroundGeolocation.on('location', async location => {
-      if (currentDevice && enabled) {
-        setPause(false);
-        const gps: GPSPacket = {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          accuracy: location.accuracy,
-          altitude: location.altitude,
-          speed: location.speed,
-          activity: activityType,
-          device: currentDevice.id,
-        };
-        setLocation(gps);
+    BackgroundGeolocation.on('location', location => {
+      console.info('Reading from background');
+      getDevice().then(device => {
+        console.info('Backgound: On location', device, enabled);
+        if (device && location) {
+          setPause(false);
+          const gps: GPSPacket = {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            accuracy: location.accuracy,
+            altitude: location.altitude,
+            speed: location.speed,
+            activity: activityType,
+            device: (device as any).id,
+          };
+          setLocation(gps);
 
-        BackgroundGeolocation.startTask(async taskKey => {
-          // execute long running task
-          // eg. ajax post location
-          // IMPORTANT: task has to be ended by endTask
-          if (backgroud) {
+          BackgroundGeolocation.startTask(async taskKey => {
+            // execute long running task
+            // eg. ajax post location
+            // IMPORTANT: task has to be ended by endTask
+            // if (backgroud) {
             console.info('From background task: SEND PACKET', taskKey);
             await axios
-              .post(BASE_URL + '/gps', gps)
+              .post(BASE_URL + '/gps', {...gps, activity: 'BACKGROUND'})
               .then(response =>
                 console.info('Sent GPS packet from background:', response.data),
               )
               .catch(error => console.info('Error on GPS packet', error, gps));
-          }
-          BackgroundGeolocation.endTask(taskKey);
-        });
-      } else {
-        setPause(true);
-      }
+            // }
+            BackgroundGeolocation.endTask(taskKey);
+          });
+        }
+        // else {
+        //   setPause(true);
+        // }
+      });
     });
 
     BackgroundGeolocation.on('stationary', stationaryLocation => {
@@ -186,7 +200,7 @@ const useTracking = (enabled: boolean) => {
     return () =>
       (console.info('ENDING') as any) ||
       BackgroundGeolocation.removeAllListeners();
-  }, [currentDevice, backgroud, isEnabled, activityType, pause]);
+  }, []); //[currentDevice, backgroud, isEnabled, activityType, pause]);
 
   return {
     location: currentLocation,
