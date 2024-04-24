@@ -17,8 +17,10 @@ import {
   latestGpsPositions,
 } from '../queries';
 import useDevice from '../components/hooks/use-device';
-// import Boundary, {Events} from 'react-native-boundary';
 import useBackgroundGeolocationTracker from '../components/hooks/background-tracking';
+import {getData, storeData} from '../utils/storage';
+import {Setting} from '../models/settings';
+
 export interface GPSPacket {
   latitude: number;
   longitude: number;
@@ -29,46 +31,24 @@ export interface GPSPacket {
   activity: string | null;
 }
 
+export const sendGPSPacket = async (gps: GPSPacket) => {
+  axios
+    .post(BASE_URL + '/gps', gps)
+    .then(response => console.info('Sent GPS packet:', response.data))
+    .catch(error => console.info('Error on GPS packet', error, gps));
+};
+
 export default function MainScreen({navigation}: any) {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [isEnabled, setIsEnabled] = useState(true);
   const toggleSwitch = () => setIsEnabled(previousState => !previousState);
   const [createDeviceModal, setCreateDeviceModal] = useState(false);
 
-  const {location, backgroud, pause} = useTracking(isEnabled);
+  // const {location, backgroud, pause} = useTracking(isEnabled);
   const {currentDevice, currentDeviceDisplay} = useDevice();
 
-  // const [state, setState] = useState({
-  //   isEnter: false,
-  // });
-  // const loc = useBackgroundGeolocationTracker();
-  // console.info('From hook', loc);
-  console.log('useTraking latitude', location);
-
-  // useEffect(() => {
-  //   const BoundaryData = [
-  //     {
-  //       lat: 51.399925,
-  //       lng: -0.05063,
-  //       radius: 100,
-  //       id: 'Home',
-  //     },
-  //   ];
-  //   BoundaryData.map(boundary => {
-  //     Boundary.add(boundary)
-  //       .then(() => console.log('success!'))
-  //       .catch(e => console.log(e));
-  //   });
-
-  //   Boundary.on(Events.ENTER, id => {
-  //     console.warn('Enter Boundary ', id);
-  //     state.isEnter = true;
-  //   });
-  //   Boundary.on(Events.EXIT, id => {
-  //     console.warn('Exit Boundary ', id);
-  //     state.isEnter = false;
-  //   });
-  // }, []);
+  const location = useBackgroundGeolocationTracker(isEnabled);
+  console.log('useTraking: ', location);
 
   const [getPositionForDevice, {data: selectedDevicePosition}] = useLazyQuery(
     latestGpsPositions,
@@ -83,21 +63,22 @@ export default function MainScreen({navigation}: any) {
 
   const [getDeviceList, {data: devices}] = useLazyQuery(devicesQuery);
 
-  const sendGPSPacket = async (gps: GPSPacket) => {
-    axios
-      .post(BASE_URL + '/gps', gps)
-      .then(response => console.info('Sent GPS packet:', response.data))
-      .catch(error => console.info('Error on GPS packet', error, gps));
-  };
-
-  const getData = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem('userinfo');
-      return jsonValue != null ? JSON.parse(jsonValue) : null;
-    } catch (e) {
-      // error reading value
-    }
-  };
+  useEffect(() => {
+    const readSettings = async () => {
+      const settings: Setting = (await getData('settings')) as Setting;
+      console.info('Reading', settings);
+      if (!settings) {
+        const newSetting: Setting = {
+          locationEnabled: isEnabled,
+        };
+        storeData('settings', newSetting);
+      } else {
+        storeData('settings', {locationEnabled: isEnabled});
+        setIsEnabled(isEnabled);
+      }
+    };
+    readSettings();
+  }, [isEnabled]);
 
   React.useEffect(() => {
     // Use `setOptions` to update the button that we previously specified
@@ -116,7 +97,7 @@ export default function MainScreen({navigation}: any) {
   useFocusEffect(
     React.useCallback(() => {
       const uData = async () => {
-        const user = await getData();
+        const user = await getData('userinfo');
         if (user) {
           setCurrentUser(user);
           getDeviceList({variables: {userId: user.id}});
@@ -153,9 +134,9 @@ export default function MainScreen({navigation}: any) {
     // Implementing the setInterval method
 
     const interval = setInterval(() => {
-      console.info(pause, backgroud, location, isEnabled);
-      if (!pause && location && isEnabled && !!location.device) {
-        console.info(location);
+      // console.info(location, isEnabled);
+      if (location && isEnabled) {
+        // console.info(location);
         sendGPSPacket(location);
       } else {
         // console.info('No device found');
@@ -163,7 +144,7 @@ export default function MainScreen({navigation}: any) {
     }, 5000);
     //Clearing the interval
     return () => clearInterval(interval);
-  }, [isEnabled, location, pause, backgroud, currentDevice]);
+  }, [isEnabled, location, currentDevice]);
 
   const getMarker = () => {
     if (location && isEnabled) {

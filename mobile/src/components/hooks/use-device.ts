@@ -44,7 +44,6 @@ const useDevice = () => {
     getDevice();
   }, []);
 
-  console.info('READING:', currentDevice);
   return {currentDevice, currentDeviceDisplay};
 };
 
