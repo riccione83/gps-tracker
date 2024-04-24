@@ -304,7 +304,7 @@ export const serverPromise = new Promise((resolve, reject) => {
         const geofences = await ds.manager.find(Geofences, {
           where: { user: user },
         });
-        return geofences;
+        res.send(geofences);
       });
 
       server = app.listen(port);
