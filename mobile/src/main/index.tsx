@@ -1,35 +1,27 @@
 import {useLazyQuery, useMutation} from '@apollo/client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import PushNotificationIOS from '@react-native-community/push-notification-ios';
 import {useFocusEffect} from '@react-navigation/native';
 import axios from 'axios';
 import React, {useEffect, useState} from 'react';
 import {Button, ScrollView, StyleSheet, Switch} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
-import useTracking from '../components/BackgroundTraking';
 import {Text, View} from '../components/Themed';
 import BottomSlidingView from '../components/bottomslidingview';
+import useBackgroundGeolocationTracker from '../components/hooks/background-tracking';
+import useDevice from '../components/hooks/use-device';
 import MapComponent from '../components/map';
 import ModalComponent from '../components/modal';
 import {BASE_URL} from '../constants/App';
+import {GPSPacket} from '../models/gps';
+import {Setting} from '../models/settings';
 import {
   createDeviceMutation,
   devicesQuery,
   latestGpsPositions,
 } from '../queries';
-import useDevice from '../components/hooks/use-device';
-import useBackgroundGeolocationTracker from '../components/hooks/background-tracking';
+import {sendLocalNotification} from '../utils/local-notifications';
 import {getData, storeData} from '../utils/storage';
-import {Setting} from '../models/settings';
-
-export interface GPSPacket {
-  latitude: number;
-  longitude: number;
-  device: number;
-  speed: number;
-  altitude: number;
-  accuracy: number;
-  activity: string | null;
-}
+import PushNotification from 'react-native-push-notification';
 
 export const sendGPSPacket = async (gps: GPSPacket) => {
   axios
@@ -41,14 +33,123 @@ export const sendGPSPacket = async (gps: GPSPacket) => {
 export default function MainScreen({navigation}: any) {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [isEnabled, setIsEnabled] = useState(true);
-  const toggleSwitch = () => setIsEnabled(previousState => !previousState);
+  const toggleSwitch = () => {
+    setIsEnabled(previousState => !previousState);
+    storeData('settings', {locationEnabled: !isEnabled});
+  };
   const [createDeviceModal, setCreateDeviceModal] = useState(false);
-
-  // const {location, backgroud, pause} = useTracking(isEnabled);
+  const [loaded, setLoaded] = useState(false);
   const {currentDevice, currentDeviceDisplay} = useDevice();
+  const [token, setToken] = useState('');
 
   const location = useBackgroundGeolocationTracker(isEnabled);
   console.log('useTraking: ', location);
+
+  useEffect(() => {
+    PushNotificationIOS.addEventListener('register', onRegistered);
+    PushNotificationIOS.addEventListener(
+      'registrationError',
+      onRegistrationError,
+    );
+    PushNotificationIOS.addEventListener('notification', onRemoteNotification);
+    PushNotificationIOS.addEventListener(
+      'localNotification',
+      onLocalNotification,
+    );
+
+    PushNotificationIOS.requestPermissions({
+      alert: true,
+      badge: true,
+      sound: true,
+      critical: true,
+    }).then(
+      data => {
+        console.log('PushNotificationIOS.requestPermissions', data);
+      },
+      data => {
+        console.log('PushNotificationIOS.requestPermissions failed', data);
+      },
+    );
+
+    return () => {
+      PushNotificationIOS.removeEventListener('register');
+      PushNotificationIOS.removeEventListener('registrationError');
+      PushNotificationIOS.removeEventListener('notification');
+      PushNotificationIOS.removeEventListener('localNotification');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onRegistered = (deviceToken: any) => {
+    console.log('Registered For Remote Push', `Device Token: ${deviceToken}`);
+    setToken(deviceToken);
+  };
+
+  const onRegistrationError = (error: any) => {
+    console.log(
+      'Failed To Register For Remote Push',
+      `Error (${error.code}): ${error.message}`,
+    );
+  };
+
+  const onRemoteNotification = (notification: any) => {
+    const isClicked = notification.getData().userInteraction === 1;
+
+    const result = `
+      Title:  ${notification.getTitle()};\n
+      Subtitle:  ${notification.getSubtitle()};\n
+      Message: ${notification.getMessage()};\n
+      badge: ${notification.getBadgeCount()};\n
+      sound: ${notification.getSound()};\n
+      category: ${notification.getCategory()};\n
+      content-available: ${notification.getContentAvailable()};\n
+      Notification is clicked: ${String(isClicked)}.`;
+
+    if (notification.getTitle() == undefined) {
+      console.info('Silent push notification Received', result);
+    } else {
+      console.info('Push Notification Received', result);
+    }
+    notification.finish('UIBackgroundFetchResultNoData');
+  };
+
+  const onLocalNotification = (notification: any) => {
+    const isClicked = notification.getData().userInteraction === 1;
+
+    console.log(
+      'Local Notification Received',
+      `Alert title:  ${notification.getTitle()},
+      Alert subtitle:  ${notification.getSubtitle()},
+      Alert message:  ${notification.getMessage()},
+      Badge: ${notification.getBadgeCount()},
+      Sound: ${notification.getSound()},
+      Thread Id:  ${notification.getThreadID()},
+      Action Id:  ${notification.getActionIdentifier()},
+      User Text:  ${notification.getUserText()},
+      Notification is clicked: ${String(isClicked)}.`,
+      [
+        {
+          text: 'Dismiss',
+          onPress: null,
+        },
+      ],
+    );
+  };
+
+  useEffect(() => {
+    if (location !== null && !loaded) {
+      console.info('Send notification');
+      setLoaded(true);
+      getData('settings').then((setting: Setting) => {
+        sendLocalNotification(
+          'TrackMe',
+          `Tracking is now ${
+            setting.locationEnabled ? 'enabled' : 'disabled'
+          }. You can now hide the application.`,
+        );
+      });
+    }
+  }, [location]);
 
   const [getPositionForDevice, {data: selectedDevicePosition}] = useLazyQuery(
     latestGpsPositions,
@@ -66,15 +167,15 @@ export default function MainScreen({navigation}: any) {
   useEffect(() => {
     const readSettings = async () => {
       const settings: Setting = (await getData('settings')) as Setting;
-      console.info('Reading', settings);
       if (!settings) {
         const newSetting: Setting = {
           locationEnabled: isEnabled,
         };
         storeData('settings', newSetting);
+        console.info('Created settings:', newSetting);
       } else {
-        storeData('settings', {locationEnabled: isEnabled});
-        setIsEnabled(isEnabled);
+        setIsEnabled(settings.locationEnabled);
+        console.info('Read settings:', isEnabled);
       }
     };
     readSettings();
@@ -107,36 +208,21 @@ export default function MainScreen({navigation}: any) {
         uData();
       }
 
-      // getDevice();
-      // if (!currentDevice) {
-      //   DeviceInfo.getDeviceName().then(display => {
-      //     setCurrentDeviceDisplay(display);
-      //     const deviceId = DeviceInfo.getDeviceId() + '_' + display;
-      //     checkDevice({
-      //       variables: {
-      //         serial: deviceId,
-      //       },
-      //     })
-      //       .then(result => {
-      //         if (result.data?.checkDevice) {
-      //           setCurrentDevice(result.data?.checkDevice);
-      //         } else {
-      //           setCreateDeviceModal(true);
-      //         }
-      //       })
-      //       .catch(() => {});
-      //   });
-      // }
-    }, [currentUser]),
+      if (currentUser && token !== '' && token !== 'ALREADY_SET') {
+        //Set new token to the BE
+        setToken('ALREADY_SET');
+      }
+    }, [currentUser, token]),
   );
 
   useEffect(() => {
     // Implementing the setInterval method
 
     const interval = setInterval(() => {
-      // console.info(location, isEnabled);
-      if (location && isEnabled) {
-        // console.info(location);
+      PushNotificationIOS.setApplicationIconBadgeNumber(0);
+      PushNotification.setApplicationIconBadgeNumber(0);
+      if (location && isEnabled && currentUser) {
+        //Check the current location is inside a polygon
         sendGPSPacket(location);
       } else {
         // console.info('No device found');
@@ -204,7 +290,7 @@ export default function MainScreen({navigation}: any) {
 
       <View style={styles.mapContainer}>
         <MapComponent
-          showUserPosition={location === null}
+          showUserPosition={location === null || !isEnabled}
           marker={getMarker()}
         />
       </View>

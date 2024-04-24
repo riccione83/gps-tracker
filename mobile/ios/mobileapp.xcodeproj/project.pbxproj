@@ -47,6 +47,7 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = mobileapp/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		8B3D89232BD7B5D400CF329B /* mobileap-Release.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "mobileap-Release.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B3D89242BD7B5D400CF329B /* mobileapp copy2-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "mobileapp copy2-Info.plist"; path = "/Users/riccardo/Documents/graphql/mobile/ios/mobileapp copy2-Info.plist"; sourceTree = "<absolute>"; };
+		8BD0724E2BD9379500E88514 /* mobileapp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = mobileapp.entitlements; path = mobileapp/mobileapp.entitlements; sourceTree = "<group>"; };
 		95BADE5E64D59120075773D4 /* Pods-mobileapp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-mobileapp.release.xcconfig"; path = "Target Support Files/Pods-mobileapp/Pods-mobileapp.release.xcconfig"; sourceTree = "<group>"; };
 		B2FF72D0ED73AFB258052ECE /* Pods-mobileapp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-mobileapp.debug.xcconfig"; path = "Target Support Files/Pods-mobileapp/Pods-mobileapp.debug.xcconfig"; sourceTree = "<group>"; };
 		E26CDC81D4132871051B86CA /* libPods-mobileapp-mobileappTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-mobileapp-mobileappTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -101,6 +102,7 @@
 		13B07FAE1A68108700A75B9A /* mobileapp */ = {
 			isa = PBXGroup;
 			children = (
+				8BD0724E2BD9379500E88514 /* mobileapp.entitlements */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.mm */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
@@ -571,6 +573,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = mobileapp/mobileapp.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = V82L5L552M;
 				ENABLE_BITCODE = NO;
@@ -599,6 +602,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = mobileapp/mobileapp.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = V82L5L552M;
 				INFOPLIST_FILE = mobileapp/Info.plist;

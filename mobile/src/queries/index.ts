@@ -74,6 +74,14 @@ const latestGpsPositions = gql(`query GetLatestPositions($userId: Int!) {
   }
 }`);
 
+const getGeofencesQuery = gql(`query GetGeofences($userId: Int!) {
+  geofences(userId: $userId) {
+    latitude
+    longitude
+    radius
+  }
+}`);
+
 export {
   userQuery,
   gpsQuery,
@@ -83,4 +91,5 @@ export {
   devicesQuery,
   checkDeviceQuery,
   latestGpsPositions,
+  getGeofencesQuery,
 };

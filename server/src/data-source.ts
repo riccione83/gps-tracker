@@ -6,6 +6,8 @@ import { DataSource } from "typeorm";
 import { Device } from "./models/device";
 import { GPSPosition } from "./models/position";
 import { User } from "./models/user";
+import { Geofences } from "./models/geofence";
+import { Events } from "./models/events";
 
 dotenv.config({ debug: false });
 
@@ -26,7 +28,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME,
   synchronize: true,
   logging: true,
-  entities: [User, Device, GPSPosition],
+  entities: [User, Device, GPSPosition, Geofences, Events],
   subscribers: [],
   // migrations: [],
   migrationsTableName: "migrations",

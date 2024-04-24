@@ -1,9 +1,15 @@
 "use client"; // this makes this component a client component
 import CalendarComponent from "@/components/calendar";
+import CircleComponent from "@/components/circle";
 import Loader from "@/components/loader";
 import isAuth from "@/components/protected-route";
 import { Device } from "@/gql-generated/graphql";
-import { getUserQuery, gpsQuery, latestGpsPositions } from "@/queries";
+import {
+  getGeofencesQuery,
+  getUserQuery,
+  gpsQuery,
+  latestGpsPositions,
+} from "@/queries";
 import { addDevices } from "@/store/deviceSlice";
 import { useAppDispatch, useAppSelector } from "@/store/store";
 import { multiOptions } from "@/utils/fleetmap";
@@ -50,6 +56,10 @@ function Home() {
     fetchPolicy: "network-only",
   });
 
+  const [getGeofences, { data: geofences }] = useLazyQuery(getGeofencesQuery, {
+    fetchPolicy: "network-only",
+  });
+
   const [getLatestPositions, { data: _latestPositions }] = useLazyQuery(
     latestGpsPositions,
     {
@@ -73,6 +83,11 @@ function Home() {
           userId: Number(user.id),
         },
       });
+    getGeofences({
+      variables: {
+        userId: Number(user.id),
+      },
+    });
   }, [getLatestPositions, user]);
 
   useEffect(() => {
@@ -207,6 +222,16 @@ function Home() {
             center={param ? gpsPositions?.positions?.at(0) : undefined}
             bounds={!param && bounds ? bounds : undefined}
           >
+            {geofences &&
+              geofences.geofences?.map((g) => {
+                return (
+                  <CircleComponent
+                    lat={g?.latitude}
+                    lng={g?.longitude}
+                    radius={g?.radius}
+                  />
+                );
+              })}
             {param ? (
               <>
                 {gpsPositions?.positions && (

@@ -11,6 +11,9 @@ import { Device } from "./models/device";
 import { GPSPosition } from "./models/position";
 import { User } from "./models/user";
 import { MutationRoot, QueryRoot } from "./schema/user";
+import { Events } from "./models/events";
+import { isInGeofence } from "./utils/map";
+import { Geofences } from "./models/geofence";
 var passwordHash = require("password-hash");
 
 const pgSession = require("connect-pg-simple")(session);
@@ -192,6 +195,42 @@ export const serverPromise = new Promise((resolve, reject) => {
         });
         console.info("Found", device);
         if (device) {
+          if (req.session.user) {
+            const geofences = await ds.manager.find(Geofences, {
+              where: { user: req.session.user },
+            });
+            geofences.forEach(async (g) => {
+              //Check if there is a geofence event
+              const event = await ds.manager.findOne(Events, {
+                where: { device: device, geofence: g },
+              });
+              const isGeofence = isInGeofence(newPoint, g, g.radius);
+              if (event === null) {
+                if (isGeofence) {
+                  await ds.manager.insert(Events, {
+                    device: device,
+                    geofence: g,
+                    status: "enter",
+                  });
+                  //No previous geofences, generating one
+                }
+                console.info("No geofence event for this device");
+              } else {
+                const toUpdate = !isGeofence && event.status === "enter";
+                if (toUpdate) {
+                  const edited = await ds
+                    .createQueryBuilder()
+                    .update(Events)
+                    .set({
+                      status: isGeofence ? "enter" : "exit",
+                    })
+                    .where("id = :id", { id: Number(event.id) })
+                    .execute();
+                }
+              }
+            });
+          }
+
           const inserted = await ds.manager.insert(GPSPosition, {
             latitude: newPoint.latitude,
             longitude: newPoint.longitude,
@@ -246,6 +285,26 @@ export const serverPromise = new Promise((resolve, reject) => {
           res.status(401).json({ error: "Password update error" });
           return;
         }
+      });
+
+      app.get("/geofences", async (req, res) => {
+        if (!req.session.user) {
+          res.status(401).send("Not authenticated");
+          return;
+        }
+        const user = await ds.manager.findOne(User, {
+          where: { id: Number(req.session.user.id) },
+        });
+
+        if (!user) {
+          res.status(401).send("User not found");
+          return;
+        }
+        if (!user) return [];
+        const geofences = await ds.manager.find(Geofences, {
+          where: { user: user },
+        });
+        return geofences;
       });
 
       server = app.listen(port);

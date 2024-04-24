@@ -15,6 +15,7 @@ import { Device } from "../models/device";
 import { GPSPosition } from "../models/position";
 import { User, makeid } from "../models/user";
 import { LessThan, MoreThan, Raw } from "typeorm";
+import { Geofences } from "../models/geofence";
 var passwordHash = require("password-hash");
 
 const DateTimeScalar = new GraphQLScalarType({
@@ -76,6 +77,16 @@ const GPSGraphType = new GraphQLObjectType({
     satellites: { type: GraphQLFloat },
     accuracy: { type: GraphQLFloat },
     activity: { type: GraphQLString },
+  }),
+});
+
+const GeofenceGraphType: GraphQLObjectType = new GraphQLObjectType({
+  name: "Geofences",
+  fields: () => ({
+    id: { type: GraphQLInt },
+    latitude: { type: GraphQLFloat },
+    longitude: { type: GraphQLFloat },
+    radius: { type: GraphQLFloat },
   }),
 });
 
@@ -205,6 +216,23 @@ const QueryRoot = new GraphQLObjectType({
           return gps;
         }
         return [];
+      },
+    },
+    geofences: {
+      type: new GraphQLList(GeofenceGraphType),
+      args: { userId: { type: new GraphQLNonNull(GraphQLInt) } },
+      resolve: async (parent: any, args: any, context: MyContext) => {
+        const user = await context.db.manager.findOne(User, {
+          where: { id: args.userId },
+          relations: {
+            devices: true,
+          },
+        });
+        if (!user) return [];
+        const geofences = await context.db.manager.find(Geofences, {
+          where: { user: user },
+        });
+        return geofences;
       },
     },
   }),

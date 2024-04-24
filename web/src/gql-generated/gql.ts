@@ -22,6 +22,7 @@ const documents = {
     "mutation EditDevice($deviceId: Int!, $description: String!) {\n  editDevice(deviceId: $deviceId, description: $description) {\n    id\n    serial\n    description\n  }\n}": types.EditDeviceDocument,
     "\nmutation CreateUser($name: String!, $email: String!, $password: String!) {\n  createUser(name: $name, email: $email, password: $password) {\n    id\n    name\n    email\n  }\n}": types.CreateUserDocument,
     "query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    id\n    serial\n    coord {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n      accuracy\n      activity\n    }\n  }\n}": types.GetLatestPositionsDocument,
+    "query GetGeofences($userId: Int!) {\n  geofences(userId: $userId) {\n    latitude\n    longitude\n    radius\n  }\n}": types.GetGeofencesDocument,
 };
 
 /**
@@ -74,6 +75,10 @@ export function gql(source: "\nmutation CreateUser($name: String!, $email: Strin
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(source: "query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    id\n    serial\n    coord {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n      accuracy\n      activity\n    }\n  }\n}"): (typeof documents)["query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    id\n    serial\n    coord {\n      latitude\n      longitude\n      timestamp\n      speed\n      satellites\n      accuracy\n      activity\n    }\n  }\n}"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "query GetGeofences($userId: Int!) {\n  geofences(userId: $userId) {\n    latitude\n    longitude\n    radius\n  }\n}"): (typeof documents)["query GetGeofences($userId: Int!) {\n  geofences(userId: $userId) {\n    latitude\n    longitude\n    radius\n  }\n}"];
 
 export function gql(source: string) {
   return (documents as any)[source] ?? {};

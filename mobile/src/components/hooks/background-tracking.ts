@@ -2,9 +2,10 @@ import {useEffect, useState} from 'react';
 import BackgroundGeolocation from '@mak12/react-native-background-geolocation';
 import {Platform, Alert} from 'react-native';
 import {getData} from '../../utils/storage';
-import {GPSPacket, sendGPSPacket} from '../../main';
+import {sendGPSPacket} from '../../main';
 import {BASE_URL} from '../../constants/App';
 import {Setting} from '../../models/settings';
+import {GPSPacket} from '../../models/gps';
 
 const useBackgroundGeolocationTracker = (enabled: boolean) => {
   const [activityType, setActivityType] = useState<string | null>(null);
@@ -27,13 +28,13 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
           distanceFilter: 5,
           notificationTitle: 'Background tracking',
           notificationText: 'enabled',
-          debug: true,
+          debug: false,
           startOnBoot: false,
           stopOnTerminate: false,
-          locationProvider: BackgroundGeolocation.ACTIVITY_PROVIDER,
-          // Platform.OS === 'android'
-          //   ? BackgroundGeolocation.ACTIVITY_PROVIDER
-          //   : BackgroundGeolocation.DISTANCE_FILTER_PROVIDER,
+          locationProvider:
+            Platform.OS === 'android'
+              ? BackgroundGeolocation.ACTIVITY_PROVIDER
+              : BackgroundGeolocation.DISTANCE_FILTER_PROVIDER,
           interval: 10000,
           fastestInterval: 10000,
           activitiesInterval: 10000,
@@ -41,7 +42,7 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
           pauseLocationUpdates: false,
           saveBatteryOnBackground: false,
           syncThreshold: '0',
-          maxLocations: 1,
+          maxLocations: 0,
         },
         () => {
           console.info('SUCCESS');
@@ -95,34 +96,37 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
     BackgroundGeolocation.on('start', () => {
       console.log('[INFO] BackgroundGeolocation service has been started');
 
-      // BackgroundGeolocation.getCurrentLocation(
-      //   location => {
-      //     const region = Object.assign({}, location, {
-      //       latitudeDelta,
-      //       longitudeDelta,
-      //     });
-      //     getDevice().then(device => {
-      //       setState((state: any) => ({
-      //         ...state,
-      //         longitude: location.longitude,
-      //         accuracy: location.accuracy,
-      //         altitude: location.altitude,
-      //         speed: location.speed,
-      //         activity: activityType,
-      //         device: device.id,
-      //         // region: region,
-      //       }));
-      //     });
-      //   },
-      //   error => {
-      //     setTimeout(() => {
-      //       Alert.alert(
-      //         'Error obtaining current location',
-      //         JSON.stringify(error),
-      //       );
-      //     }, 100);
-      //   },
-      // );
+      BackgroundGeolocation.getCurrentLocation(
+        location => {
+          const region = Object.assign({}, location, {
+            latitudeDelta,
+            longitudeDelta,
+          });
+          getDevice().then(device => {
+            getData('settings').then((setting: Setting) => {
+              setting.locationEnabled &&
+                setState((state: any) => ({
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  accuracy: location.accuracy,
+                  altitude: location.altitude,
+                  speed: location.speed,
+                  activity: activityType,
+                  device: device.id,
+                  // region: region,
+                }));
+            });
+          });
+        },
+        error => {
+          setTimeout(() => {
+            Alert.alert(
+              'Error obtaining current location',
+              JSON.stringify(error),
+            );
+          }, 100);
+        },
+      );
     });
 
     BackgroundGeolocation.checkStatus(status => {
