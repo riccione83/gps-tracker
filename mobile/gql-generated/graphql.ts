@@ -29,10 +29,22 @@ export type Device = {
 
 export type Gps = {
   __typename?: 'GPS';
+  accuracy?: Maybe<Scalars['Float']['output']>;
+  activity?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['String']['output']>;
   latitude?: Maybe<Scalars['Float']['output']>;
   longitude?: Maybe<Scalars['Float']['output']>;
+  satellites?: Maybe<Scalars['Float']['output']>;
+  speed?: Maybe<Scalars['Float']['output']>;
   timestamp?: Maybe<Scalars['Date']['output']>;
+};
+
+export type Geofences = {
+  __typename?: 'Geofences';
+  id?: Maybe<Scalars['Int']['output']>;
+  latitude?: Maybe<Scalars['Float']['output']>;
+  longitude?: Maybe<Scalars['Float']['output']>;
+  radius?: Maybe<Scalars['Float']['output']>;
 };
 
 export type LatestPosition = {
@@ -81,6 +93,7 @@ export type Query = {
   checkDevice?: Maybe<Device>;
   device?: Maybe<Device>;
   devices?: Maybe<Array<Maybe<Device>>>;
+  geofences?: Maybe<Array<Maybe<Geofences>>>;
   latestPosition?: Maybe<Array<Maybe<LatestPosition>>>;
   positions?: Maybe<Array<Maybe<Gps>>>;
   user?: Maybe<User>;
@@ -98,6 +111,11 @@ export type QueryDeviceArgs = {
 };
 
 
+export type QueryGeofencesArgs = {
+  userId: Scalars['Int']['input'];
+};
+
+
 export type QueryLatestPositionArgs = {
   id: Scalars['Int']['input'];
 };
@@ -105,8 +123,7 @@ export type QueryLatestPositionArgs = {
 
 export type QueryPositionsArgs = {
   deviceId: Scalars['Int']['input'];
-  from?: InputMaybe<Scalars['Date']['input']>;
-  to?: InputMaybe<Scalars['Date']['input']>;
+  for?: InputMaybe<Scalars['Date']['input']>;
 };
 
 
@@ -178,6 +195,13 @@ export type GetLatestPositionsQueryVariables = Exact<{
 
 export type GetLatestPositionsQuery = { __typename?: 'Query', latestPosition?: Array<{ __typename?: 'LatestPosition', description?: string | null, serial?: string | null, coord?: { __typename?: 'GPS', latitude?: number | null, longitude?: number | null } | null } | null> | null };
 
+export type GetGeofencesQueryVariables = Exact<{
+  userId: Scalars['Int']['input'];
+}>;
+
+
+export type GetGeofencesQuery = { __typename?: 'Query', geofences?: Array<{ __typename?: 'Geofences', latitude?: number | null, longitude?: number | null, radius?: number | null } | null> | null };
+
 
 export const GetUsersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUsers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"users"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"devices"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"serial"}},{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]} as unknown as DocumentNode<GetUsersQuery, GetUsersQueryVariables>;
 export const GetPositionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPositions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"deviceId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"positions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"deviceId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"deviceId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"latitude"}},{"kind":"Field","name":{"kind":"Name","value":"longitude"}},{"kind":"Field","name":{"kind":"Name","value":"timestamp"}}]}}]}}]} as unknown as DocumentNode<GetPositionsQuery, GetPositionsQueryVariables>;
@@ -187,3 +211,4 @@ export const GetDeviceDocument = {"kind":"Document","definitions":[{"kind":"Oper
 export const CheckDeviceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"CheckDevice"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"serial"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"checkDevice"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"serial"},"value":{"kind":"Variable","name":{"kind":"Name","value":"serial"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"serial"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<CheckDeviceQuery, CheckDeviceQueryVariables>;
 export const GetDevicesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDevices"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"devices"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]}}]} as unknown as DocumentNode<GetDevicesQuery, GetDevicesQueryVariables>;
 export const GetLatestPositionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetLatestPositions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"latestPosition"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"serial"}},{"kind":"Field","name":{"kind":"Name","value":"coord"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"latitude"}},{"kind":"Field","name":{"kind":"Name","value":"longitude"}}]}}]}}]}}]} as unknown as DocumentNode<GetLatestPositionsQuery, GetLatestPositionsQueryVariables>;
+export const GetGeofencesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetGeofences"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"geofences"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"userId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"latitude"}},{"kind":"Field","name":{"kind":"Name","value":"longitude"}},{"kind":"Field","name":{"kind":"Name","value":"radius"}}]}}]}}]} as unknown as DocumentNode<GetGeofencesQuery, GetGeofencesQueryVariables>;

@@ -21,6 +21,7 @@ const documents = {
     "query CheckDevice($serial: String!) {\n  checkDevice(serial: $serial) {\n    id\n    serial\n    description\n  }\n}\n": types.CheckDeviceDocument,
     "query GetDevices($userId: Int!) {\n  user(id: $userId) {\n    devices {\n      id\n      description\n    }\n  }\n}": types.GetDevicesDocument,
     "query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    serial\n    coord {\n      latitude\n      longitude\n    }\n  }\n}": types.GetLatestPositionsDocument,
+    "query GetGeofences($userId: Int!) {\n  geofences(userId: $userId) {\n    latitude\n    longitude\n    radius\n  }\n}": types.GetGeofencesDocument,
 };
 
 /**
@@ -69,6 +70,10 @@ export function gql(source: "query GetDevices($userId: Int!) {\n  user(id: $user
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(source: "query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    serial\n    coord {\n      latitude\n      longitude\n    }\n  }\n}"): (typeof documents)["query GetLatestPositions($userId: Int!) {\n  latestPosition(id: $userId) {\n    description\n    serial\n    coord {\n      latitude\n      longitude\n    }\n  }\n}"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "query GetGeofences($userId: Int!) {\n  geofences(userId: $userId) {\n    latitude\n    longitude\n    radius\n  }\n}"): (typeof documents)["query GetGeofences($userId: Int!) {\n  geofences(userId: $userId) {\n    latitude\n    longitude\n    radius\n  }\n}"];
 
 export function gql(source: string) {
   return (documents as any)[source] ?? {};

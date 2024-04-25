@@ -1,13 +1,19 @@
 import React, {useState} from 'react';
 import {StyleSheet} from 'react-native';
-import MapView, {Marker} from 'react-native-maps';
+import MapView, {Circle, Marker} from 'react-native-maps';
+import {Geofences} from '../../../gql-generated/graphql';
 
 interface MapProps {
   marker?: {latitude: number; longitude: number};
   showUserPosition?: boolean;
+  geofences?: Geofences[];
 }
 
-export default function MapComponent({marker, showUserPosition}: MapProps) {
+export default function MapComponent({
+  marker,
+  showUserPosition,
+  geofences,
+}: MapProps) {
   const [delta, setNewDelta] = useState<{
     latitudeDelta: number;
     longitudeDelta: number;
@@ -43,6 +49,21 @@ export default function MapComponent({marker, showUserPosition}: MapProps) {
           }}
         />
       )}
+      {geofences !== null &&
+        geofences?.map(g => {
+          return (
+            g.latitude &&
+            g.longitude &&
+            g.radius && (
+              <Circle
+                key={g.id}
+                center={{latitude: g.latitude, longitude: g.longitude}}
+                radius={g.radius * 1000}
+                fillColor="rgba(137, 194, 250,0.5)"
+              />
+            )
+          );
+        })}
     </MapView>
   );
 }

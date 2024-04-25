@@ -17,6 +17,7 @@ import {Setting} from '../models/settings';
 import {
   createDeviceMutation,
   devicesQuery,
+  getGeofencesQuery,
   latestGpsPositions,
 } from '../queries';
 import {sendLocalNotification} from '../utils/local-notifications';
@@ -164,6 +165,10 @@ export default function MainScreen({navigation}: any) {
 
   const [getDeviceList, {data: devices}] = useLazyQuery(devicesQuery);
 
+  const [getGeofences, {data: geofences}] = useLazyQuery(getGeofencesQuery);
+
+  console.info('Geofences:', geofences);
+
   useEffect(() => {
     const readSettings = async () => {
       const settings: Setting = (await getData('settings')) as Setting;
@@ -202,6 +207,12 @@ export default function MainScreen({navigation}: any) {
         if (user) {
           setCurrentUser(user);
           getDeviceList({variables: {userId: user.id}});
+          console.info('FETICHING GEOFENES');
+          getGeofences({
+            variables: {
+              userId: user.id,
+            },
+          });
         }
       };
       if (!currentUser) {
@@ -292,6 +303,7 @@ export default function MainScreen({navigation}: any) {
         <MapComponent
           showUserPosition={location === null || !isEnabled}
           marker={getMarker()}
+          geofences={geofences ? geofences.geofences : null}
         />
       </View>
 
