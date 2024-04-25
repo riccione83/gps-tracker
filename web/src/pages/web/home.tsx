@@ -19,7 +19,7 @@ import { Box, Flex } from "@chakra-ui/react";
 import "leaflet/dist/leaflet.css";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { MdArrowBack as BackIcon } from "react-icons/md";
 
 const Map = dynamic(() => import("../../components/map/map"), {
@@ -218,84 +218,86 @@ function Home() {
               Total distance: {getFormattedDistance(totalDistance)}
             </Flex>
           )}
-          <Map
-            center={param ? gpsPositions?.positions?.at(0) : undefined}
-            bounds={!param && bounds ? bounds : undefined}
-          >
-            {geofences &&
-              geofences.geofences?.map((g) => {
-                return (
-                  <CircleComponent
-                    lat={g?.latitude}
-                    lng={g?.longitude}
-                    radius={g?.radius}
-                  />
-                );
-              })}
-            {param ? (
-              <>
-                {gpsPositions?.positions && (
-                  // <RouteComponent positions={gpsPositions?.positions} />
-                  <RouteComponent
-                    positions={gpsPositions?.positions}
-                    {...multiOptions["speed"]}
-                  />
-                )}
-                {gpsPositions &&
-                  gpsPositions.positions &&
-                  gpsPositions?.positions.length > 1 && (
-                    <>
-                      <MarkerComponent
-                        key={JSON.stringify(gpsPositions.positions[0])}
-                        lat={gpsPositions.positions[0]?.latitude}
-                        lng={gpsPositions.positions[0]?.longitude}
-                        timestamp={gpsPositions.positions[0]?.timestamp}
-                        text={"Start"}
-                      />
-                      <MarkerComponent
-                        text={"End"}
-                        key={JSON.stringify(
-                          gpsPositions.positions[
-                            gpsPositions.positions.length - 1
-                          ]
-                        )}
-                        lat={
-                          gpsPositions.positions[
-                            gpsPositions.positions.length - 1
-                          ]?.latitude
-                        }
-                        lng={
-                          gpsPositions.positions[
-                            gpsPositions.positions.length - 1
-                          ]?.longitude
-                        }
-                        timestamp={
-                          gpsPositions.positions[
-                            gpsPositions.positions.length - 1
-                          ]?.timestamp
-                        }
-                      />
-                    </>
-                  )}
-              </>
-            ) : (
-              <>
-                {latestPositions?.latestPosition?.map((p) => {
-                  console.info(p);
+          <Suspense fallback={<Loader />}>
+            <Map
+              center={param ? gpsPositions?.positions?.at(0) : undefined}
+              bounds={!param && bounds ? bounds : undefined}
+            >
+              {geofences &&
+                geofences.geofences?.map((g) => {
                   return (
-                    <MarkerComponent
-                      key={JSON.stringify(p)}
-                      lat={p?.coord?.latitude}
-                      lng={p?.coord?.longitude}
-                      text={p?.description}
-                      activity={p?.activity}
-                      timestamp={undefined}
+                    <CircleComponent
+                      lat={g?.latitude}
+                      lng={g?.longitude}
+                      radius={g?.radius}
                     />
                   );
                 })}
-              </>
-            )}
-          </Map>
+              {param ? (
+                <>
+                  {gpsPositions?.positions && (
+                    // <RouteComponent positions={gpsPositions?.positions} />
+                    <RouteComponent
+                      positions={gpsPositions?.positions}
+                      {...multiOptions["speed"]}
+                    />
+                  )}
+                  {gpsPositions &&
+                    gpsPositions.positions &&
+                    gpsPositions?.positions.length > 1 && (
+                      <>
+                        <MarkerComponent
+                          key={JSON.stringify(gpsPositions.positions[0])}
+                          lat={gpsPositions.positions[0]?.latitude}
+                          lng={gpsPositions.positions[0]?.longitude}
+                          timestamp={gpsPositions.positions[0]?.timestamp}
+                          text={"Start"}
+                        />
+                        <MarkerComponent
+                          text={"End"}
+                          key={JSON.stringify(
+                            gpsPositions.positions[
+                              gpsPositions.positions.length - 1
+                            ]
+                          )}
+                          lat={
+                            gpsPositions.positions[
+                              gpsPositions.positions.length - 1
+                            ]?.latitude
+                          }
+                          lng={
+                            gpsPositions.positions[
+                              gpsPositions.positions.length - 1
+                            ]?.longitude
+                          }
+                          timestamp={
+                            gpsPositions.positions[
+                              gpsPositions.positions.length - 1
+                            ]?.timestamp
+                          }
+                        />
+                      </>
+                    )}
+                </>
+              ) : (
+                <>
+                  {latestPositions?.latestPosition?.map((p) => {
+                    console.info(p);
+                    return (
+                      <MarkerComponent
+                        key={JSON.stringify(p)}
+                        lat={p?.coord?.latitude}
+                        lng={p?.coord?.longitude}
+                        text={p?.description}
+                        activity={p?.activity}
+                        timestamp={undefined}
+                      />
+                    );
+                  })}
+                </>
+              )}
+            </Map>
+          </Suspense>
         </div>
       </div>
     </>

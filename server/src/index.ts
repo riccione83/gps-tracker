@@ -14,6 +14,8 @@ import { MutationRoot, QueryRoot } from "./schema/user";
 import { Events } from "./models/events";
 import { isInGeofence } from "./utils/map";
 import { Geofences } from "./models/geofence";
+import https from "node:https";
+
 var passwordHash = require("password-hash");
 
 const pgSession = require("connect-pg-simple")(session);
@@ -307,7 +309,19 @@ export const serverPromise = new Promise((resolve, reject) => {
         res.send(geofences);
       });
 
-      server = app.listen(port);
+      if (process.env.SSL) {
+        https
+          .createServer(
+            {
+              key: fs.readFileSync(__dirname + "/ssl/localhost.key"),
+              cert: fs.readFileSync(__dirname + "/ssl/localhost.crt"),
+            },
+            app
+          )
+          .listen(port);
+      } else {
+        server = app.listen(port);
+      }
       resolve(server);
     })
     .catch((error) => console.error("DB ERROR", error));

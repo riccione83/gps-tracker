@@ -1,13 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type StorageType = 'userinfo' | 'deviceinfo' | 'settings';
+type StorageType = 'userinfo' | 'deviceinfo' | 'settings' | 'history';
 
 export const storeData = async <T, _>(type: StorageType, value: T) => {
   try {
-    console.info('Saving', value);
     await AsyncStorage.setItem(type, JSON.stringify(value));
   } catch (e) {
-    // saving error
     console.info('ERROR!!!!', e);
   }
 };

@@ -56,10 +56,10 @@ export default function MapComponent({
             g.longitude &&
             g.radius && (
               <Circle
-                key={g.id}
+                key={`geofence-${g.id}`}
                 center={{latitude: g.latitude, longitude: g.longitude}}
                 radius={g.radius * 1000}
-                fillColor="rgba(137, 194, 250,0.5)"
+                fillColor="rgba(137, 194, 250, 0.5)"
               />
             )
           );

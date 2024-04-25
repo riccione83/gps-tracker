@@ -19,14 +19,8 @@ export default function LoginScreen({navigation}: any) {
     });
   };
 
-  // const userData = async () => {
-  //   return await getData();
-  // };
-
   React.useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      // do something
-      console.info('FOCUS');
       if (user) {
         navigation.push('Main');
       }
@@ -43,13 +37,11 @@ export default function LoginScreen({navigation}: any) {
 
   useFocusEffect(
     React.useCallback(() => {
-      console.info('Running useEffect', path);
       const uData = async () => {
         const user = await getData('userinfo');
         if (user) {
           login(user.email, user.password)
             .then(async response => {
-              console.info('Logged in', response.data);
               setCurrentUser(response.data);
               const _user = response.data;
               _user.password = user.password;
@@ -64,7 +56,7 @@ export default function LoginScreen({navigation}: any) {
       }
 
       return () => {};
-    }, [user, path]), //TODO check for path
+    }, [user, path]),
   );
 
   const handleLogin = () => {
@@ -81,11 +73,7 @@ export default function LoginScreen({navigation}: any) {
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
       {error !== '' && <Text style={styles.errorTitle}>{error}</Text>}
-      <View
-        style={styles.separator}
-        // lightColor="#eee"
-        // darkColor="rgba(255,255,255,0.1)"
-      />
+      <View style={styles.separator} />
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -104,8 +92,6 @@ export default function LoginScreen({navigation}: any) {
         onChangeText={e => setPassword(e)}
       />
       <Button title="Login" onPress={() => handleLogin()} />
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
-      {/* <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} /> */}
     </View>
   );
 }

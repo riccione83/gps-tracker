@@ -1,5 +1,3 @@
-import {GPSPacket} from '../models/gps';
-
 export function isInGeofence(
   checkPoint: {latitude: number; longitude: number},
   centerPoint: {latitude: number; longitude: number},

@@ -1,8 +1,11 @@
-import React, {useRef, useState} from 'react';
-import {Animated, Dimensions, StyleSheet, Text, View} from 'react-native';
+import React, {ReactNode, useState} from 'react';
+import {Animated, Dimensions, StyleSheet} from 'react-native';
 import {PanGestureHandler, State} from 'react-native-gesture-handler';
 
-const BottomSlidingView = ({children}) => {
+interface Props {
+  children?: ReactNode;
+}
+const BottomSlidingView = ({children}: Props) => {
   const minHeight = 120;
   const fullHeight = Dimensions.get('window').height - 200;
   const [height] = useState(new Animated.Value(minHeight)); // Start with a view height of 100

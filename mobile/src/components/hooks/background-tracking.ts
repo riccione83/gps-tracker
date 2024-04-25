@@ -2,10 +2,9 @@ import {useEffect, useState} from 'react';
 import BackgroundGeolocation from '@mak12/react-native-background-geolocation';
 import {Platform, Alert} from 'react-native';
 import {getData} from '../../utils/storage';
-import {sendGPSPacket} from '../../main';
-import {BASE_URL} from '../../constants/App';
 import {Setting} from '../../models/settings';
 import {GPSPacket} from '../../models/gps';
+import {sendGPSPacket} from '../../networking';
 
 const useBackgroundGeolocationTracker = (enabled: boolean) => {
   const [activityType, setActivityType] = useState<string | null>(null);
@@ -71,7 +70,6 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
         });
         getDevice().then(device => {
           getData('settings').then((setting: Setting) => {
-            console.info('Current settings:', setting);
             setState((state: any) => ({
               ...state,
               latitude: location.latitude,
@@ -83,8 +81,9 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
               activity: activityType,
               device: device.id,
             }));
-            console.info('SENDING:', setting.locationEnabled);
-            state && setting.locationEnabled && sendGPSPacket(state);
+            state &&
+              setting.locationEnabled &&
+              sendGPSPacket(state).catch(e => console.info('ERROR', e));
           });
         });
 

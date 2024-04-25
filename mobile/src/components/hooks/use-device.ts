@@ -20,7 +20,6 @@ const useDevice = () => {
         if (deviceFromStorage) {
           setCurrentDevice(deviceFromStorage);
         } else {
-          console.info('Getting current device');
           DeviceInfo.getDeviceName().then((display: any) => {
             setCurrentDeviceDisplay(display);
             const deviceId = DeviceInfo.getDeviceId() + '_' + display;

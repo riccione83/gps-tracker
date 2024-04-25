@@ -1,1 +1,1 @@
-export const API_URL = "http://localhost:4000"; //"http://35.178.109.112"; //"http://localhost:4000";
+export const API_URL = "http://api.trackme.riccardorizzo.eu:4010"; //"http://api.trackme.riccardorizzo.eu"; //"http://localhost:4000";

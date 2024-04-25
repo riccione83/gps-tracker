@@ -1,53 +1,68 @@
 import {useLazyQuery, useMutation} from '@apollo/client';
 import PushNotificationIOS from '@react-native-community/push-notification-ios';
 import {useFocusEffect} from '@react-navigation/native';
-import axios from 'axios';
 import React, {useEffect, useState} from 'react';
 import {Button, ScrollView, StyleSheet, Switch} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
+import PushNotification from 'react-native-push-notification';
 import {Text, View} from '../components/Themed';
 import BottomSlidingView from '../components/bottomslidingview';
 import useBackgroundGeolocationTracker from '../components/hooks/background-tracking';
 import useDevice from '../components/hooks/use-device';
 import MapComponent from '../components/map';
 import ModalComponent from '../components/modal';
-import {BASE_URL} from '../constants/App';
-import {GPSPacket} from '../models/gps';
 import {Setting} from '../models/settings';
+import {sendGPSPacket} from '../networking';
 import {
   createDeviceMutation,
   devicesQuery,
   getGeofencesQuery,
   latestGpsPositions,
 } from '../queries';
-import {sendLocalNotification} from '../utils/local-notifications';
+import {
+  onLocalNotification,
+  onRegistered,
+  onRegistrationError,
+  onRemoteNotification,
+  sendLocalNotification,
+} from '../utils/local-notifications';
 import {getData, storeData} from '../utils/storage';
-import PushNotification from 'react-native-push-notification';
-
-export const sendGPSPacket = async (gps: GPSPacket) => {
-  axios
-    .post(BASE_URL + '/gps', gps)
-    .then(response => console.info('Sent GPS packet:', response.data))
-    .catch(error => console.info('Error on GPS packet', error, gps));
-};
+import NetInfo from '@react-native-community/netinfo';
 
 export default function MainScreen({navigation}: any) {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [isEnabled, setIsEnabled] = useState(true);
-  const toggleSwitch = () => {
-    setIsEnabled(previousState => !previousState);
-    storeData('settings', {locationEnabled: !isEnabled});
-  };
   const [createDeviceModal, setCreateDeviceModal] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const {currentDevice, currentDeviceDisplay} = useDevice();
   const [token, setToken] = useState('');
-
+  const [networkError, setNetworkError] = useState<{
+    sent: boolean;
+    sentAt: Date;
+  } | null>(null);
+  const [connected, setConnected] = useState(true);
   const location = useBackgroundGeolocationTracker(isEnabled);
-  console.log('useTraking: ', location);
 
+  /** GraphQL query and mutations */
+  const [getPositionForDevice, {data: selectedDevicePosition}] = useLazyQuery(
+    latestGpsPositions,
+    {
+      fetchPolicy: 'network-only',
+    },
+  );
+  const [createDevice] = useMutation(createDeviceMutation, {
+    fetchPolicy: 'network-only',
+  });
+  const [getDeviceList, {data: devices}] = useLazyQuery(devicesQuery);
+  const [getGeofences, {data: geofences}] = useLazyQuery(getGeofencesQuery);
+
+  // Effects
+
+  /** Register Push notifications events and listeners */
   useEffect(() => {
-    PushNotificationIOS.addEventListener('register', onRegistered);
+    PushNotificationIOS.addEventListener('register', token =>
+      onRegistered(token, () => setToken(token)),
+    );
     PushNotificationIOS.addEventListener(
       'registrationError',
       onRegistrationError,
@@ -78,65 +93,9 @@ export default function MainScreen({navigation}: any) {
       PushNotificationIOS.removeEventListener('notification');
       PushNotificationIOS.removeEventListener('localNotification');
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onRegistered = (deviceToken: any) => {
-    console.log('Registered For Remote Push', `Device Token: ${deviceToken}`);
-    setToken(deviceToken);
-  };
-
-  const onRegistrationError = (error: any) => {
-    console.log(
-      'Failed To Register For Remote Push',
-      `Error (${error.code}): ${error.message}`,
-    );
-  };
-
-  const onRemoteNotification = (notification: any) => {
-    const isClicked = notification.getData().userInteraction === 1;
-
-    const result = `
-      Title:  ${notification.getTitle()};\n
-      Subtitle:  ${notification.getSubtitle()};\n
-      Message: ${notification.getMessage()};\n
-      badge: ${notification.getBadgeCount()};\n
-      sound: ${notification.getSound()};\n
-      category: ${notification.getCategory()};\n
-      content-available: ${notification.getContentAvailable()};\n
-      Notification is clicked: ${String(isClicked)}.`;
-
-    if (notification.getTitle() == undefined) {
-      console.info('Silent push notification Received', result);
-    } else {
-      console.info('Push Notification Received', result);
-    }
-    notification.finish('UIBackgroundFetchResultNoData');
-  };
-
-  const onLocalNotification = (notification: any) => {
-    const isClicked = notification.getData().userInteraction === 1;
-
-    console.log(
-      'Local Notification Received',
-      `Alert title:  ${notification.getTitle()},
-      Alert subtitle:  ${notification.getSubtitle()},
-      Alert message:  ${notification.getMessage()},
-      Badge: ${notification.getBadgeCount()},
-      Sound: ${notification.getSound()},
-      Thread Id:  ${notification.getThreadID()},
-      Action Id:  ${notification.getActionIdentifier()},
-      User Text:  ${notification.getUserText()},
-      Notification is clicked: ${String(isClicked)}.`,
-      [
-        {
-          text: 'Dismiss',
-          onPress: null,
-        },
-      ],
-    );
-  };
-
+  /** Send local notification if location start */
   useEffect(() => {
     if (location !== null && !loaded) {
       console.info('Send notification');
@@ -149,26 +108,23 @@ export default function MainScreen({navigation}: any) {
           }. You can now hide the application.`,
         );
       });
+    } else if (location === null) {
+      setLoaded(false);
     }
   }, [location]);
 
-  const [getPositionForDevice, {data: selectedDevicePosition}] = useLazyQuery(
-    latestGpsPositions,
-    {
-      fetchPolicy: 'network-only',
-    },
-  );
+  /** Networks event listener*/
+  useEffect(() => {
+    const network = NetInfo.addEventListener(state => {
+      console.info('Connection type', state.type);
+      console.info('Is connected?', state.isConnected);
+      setConnected(!!state.isInternetReachable);
+    });
 
-  const [createDevice] = useMutation(createDeviceMutation, {
-    fetchPolicy: 'network-only',
-  });
+    network();
+  }, []);
 
-  const [getDeviceList, {data: devices}] = useLazyQuery(devicesQuery);
-
-  const [getGeofences, {data: geofences}] = useLazyQuery(getGeofencesQuery);
-
-  console.info('Geofences:', geofences);
-
+  /** Read settings and apply them */
   useEffect(() => {
     const readSettings = async () => {
       const settings: Setting = (await getData('settings')) as Setting;
@@ -177,18 +133,15 @@ export default function MainScreen({navigation}: any) {
           locationEnabled: isEnabled,
         };
         storeData('settings', newSetting);
-        console.info('Created settings:', newSetting);
       } else {
         setIsEnabled(settings.locationEnabled);
-        console.info('Read settings:', isEnabled);
       }
     };
     readSettings();
   }, [isEnabled]);
 
-  React.useEffect(() => {
-    // Use `setOptions` to update the button that we previously specified
-    // Now the button includes an `onPress` handler to update the count
+  /** Add Logout button on the navigation panel */
+  useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <Button
@@ -200,6 +153,7 @@ export default function MainScreen({navigation}: any) {
     });
   }, [navigation]);
 
+  /** Read the user info from local storage and if valid fetch data */
   useFocusEffect(
     React.useCallback(() => {
       const uData = async () => {
@@ -207,7 +161,6 @@ export default function MainScreen({navigation}: any) {
         if (user) {
           setCurrentUser(user);
           getDeviceList({variables: {userId: user.id}});
-          console.info('FETICHING GEOFENES');
           getGeofences({
             variables: {
               userId: user.id,
@@ -226,22 +179,70 @@ export default function MainScreen({navigation}: any) {
     }, [currentUser, token]),
   );
 
+  /** 5000ms timer. Send location data to BE and checks if gps history is present. In this case this will send the history */
   useEffect(() => {
-    // Implementing the setInterval method
-
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       PushNotificationIOS.setApplicationIconBadgeNumber(0);
       PushNotification.setApplicationIconBadgeNumber(0);
-      if (location && isEnabled && currentUser) {
-        //Check the current location is inside a polygon
-        sendGPSPacket(location);
-      } else {
-        // console.info('No device found');
+      if (connected) {
+        //Check if there are pending messages
+        const history = (await getData('history')) as any[];
+        // console.info(`${history.length} messages to send`);
+        if (history && history.length > 0) {
+          const messages = [...history];
+
+          await await Promise.all(
+            messages.map(async (message, index) => {
+              return sendGPSPacket(message).then(() => {
+                // console.info('Sent from history:', message);
+                history.splice(index, 1);
+                // console.info(`To send: ${history.length}`);
+              });
+            }),
+          );
+          // console.info('Completed, saving: ', history);
+          await storeData('history', history);
+        }
+      }
+      if (location && isEnabled && currentUser && connected) {
+        try {
+          await sendGPSPacket(location);
+          if (networkError !== null && networkError.sent) {
+            setNetworkError(null);
+            sendLocalNotification(
+              'TrackMe',
+              `Network restored, if data is pending, will be synced soon`,
+            );
+          }
+        } catch (error) {
+          const lastSent = networkError
+            ? networkError.sentAt.getTime()
+            : Date.now();
+
+          const mils = Date.now() - lastSent;
+          if (
+            networkError === null ||
+            (Math.floor(mils / 1000) >= 60 && networkError.sent)
+          ) {
+            console.info('Sending notification after error');
+            setNetworkError({sent: true, sentAt: new Date()});
+            sendLocalNotification(
+              'Unable to send packet',
+              `Network error: ${error}`,
+            );
+          }
+        }
       }
     }, 5000);
     //Clearing the interval
     return () => clearInterval(interval);
   }, [isEnabled, location, currentDevice]);
+
+  // Methods
+  const toggleSwitch = () => {
+    setIsEnabled(previousState => !previousState);
+    storeData('settings', {locationEnabled: !isEnabled});
+  };
 
   const getMarker = () => {
     if (location && isEnabled) {
@@ -255,7 +256,6 @@ export default function MainScreen({navigation}: any) {
         (d: any) => d.description === currentDevice.description,
       );
       if (!selected) {
-        console.info('No device found', currentDevice, selectedDevicePosition);
         return undefined;
       }
       return {
@@ -263,10 +263,10 @@ export default function MainScreen({navigation}: any) {
         longitude: selected?.coord.longitude,
       };
     }
-
     return undefined;
   };
 
+  // UI
   return (
     <View style={styles.container}>
       <View style={styles.appContainer}>
@@ -287,11 +287,9 @@ export default function MainScreen({navigation}: any) {
                   description: display,
                   serial: deviceId,
                 },
-                onCompleted: d => {
-                  // setCurrentDevice(d);
+                onCompleted: () => {
                   setCreateDeviceModal(false);
                 },
-                // refetchQueries: [checkDeviceQuery],
               }).catch(e => console.error('Creating error: ', e.message));
             });
           }}
@@ -308,12 +306,7 @@ export default function MainScreen({navigation}: any) {
       </View>
 
       <BottomSlidingView>
-        <View
-          style={styles.container}
-          onTouchEnd={e => {
-            // e.preventDefault();
-            // e.stopPropagation();
-          }}>
+        <View style={styles.container}>
           <Text style={styles.title}>Share my location</Text>
           <View
             style={{
@@ -353,10 +346,7 @@ export default function MainScreen({navigation}: any) {
             lightColor="#eee"
             darkColor="rgba(255,255,255,0.1)"
           />
-          <Text style={{marginBottom: 16}}>
-            {/*style={{alignSelf: 'flex-start', marginLeft: 16}}*/}
-            Your devices
-          </Text>
+          <Text style={{marginBottom: 16}}>Your devices</Text>
           <ScrollView>
             {devices &&
               devices.user.devices.map((d: any) => {
@@ -367,9 +357,6 @@ export default function MainScreen({navigation}: any) {
                       e.preventDefault();
                       e.stopPropagation();
                       console.info('Selected', d);
-                      // setCurrentDevice(d);
-                      // setIsEnabled(currentDeviceDisplay === d.description);
-
                       getPositionForDevice({
                         variables: {
                           userId: currentUser.id,
@@ -398,7 +385,6 @@ const styles = StyleSheet.create({
     display: 'flex',
     position: 'relative',
     alignItems: 'center',
-    // justifyContent: 'center',
     width: '100%',
     height: '100%',
   },
@@ -423,7 +409,6 @@ const styles = StyleSheet.create({
   appContainer: {
     flex: 1,
     display: 'flex',
-    // flexBasis: '50%',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgb(71,155,230)',

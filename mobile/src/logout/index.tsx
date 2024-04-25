@@ -1,13 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useFocusEffect, useRoute} from '@react-navigation/native';
+import {useFocusEffect} from '@react-navigation/native';
 import axios from 'axios';
-import React, {useEffect, useState} from 'react';
-import {Button, StyleSheet, Text, TextInput, View} from 'react-native';
+import React from 'react';
+import {StyleSheet, Text, View} from 'react-native';
 import {BASE_URL} from '../constants/App';
 
 export default function LogoutScreen({navigation}: any) {
-  const {path} = useRoute();
-
   const deleteData = async () => {
     return AsyncStorage.removeItem('userinfo');
   };
@@ -15,12 +13,6 @@ export default function LogoutScreen({navigation}: any) {
   const logout = async () => {
     return axios.get(BASE_URL + '/logout');
   };
-
-  // useEffect(() => {
-  //   if (user) {
-  //     navigation.push('Login');
-  //   }
-  // }, [navigation, user, path]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -30,7 +22,7 @@ export default function LogoutScreen({navigation}: any) {
           .then(() => {
             navigation.push('Login');
           })
-          .catch(error => navigation.push('Login'));
+          .catch(() => navigation.push('Login'));
       });
     }, []), //TODO check for path
   );
