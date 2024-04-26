@@ -23,17 +23,17 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
       BackgroundGeolocation.configure(
         {
           desiredAccuracy: BackgroundGeolocation.HIGH_ACCURACY,
-          stationaryRadius: 50,
-          distanceFilter: 5,
+          stationaryRadius: 0, //50,
+          distanceFilter: 0, //5
           notificationTitle: 'Background tracking',
           notificationText: 'enabled',
           debug: false,
           startOnBoot: false,
           stopOnTerminate: false,
-          locationProvider:
-            Platform.OS === 'android'
-              ? BackgroundGeolocation.ACTIVITY_PROVIDER
-              : BackgroundGeolocation.DISTANCE_FILTER_PROVIDER,
+          locationProvider: BackgroundGeolocation.ACTIVITY_PROVIDER,
+          // Platform.OS === 'android'
+          //   ? BackgroundGeolocation.ACTIVITY_PROVIDER
+          //   : BackgroundGeolocation.DISTANCE_FILTER_PROVIDER,
           interval: 10000,
           fastestInterval: 10000,
           activitiesInterval: 10000,
@@ -57,19 +57,15 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
 
     // Onchange
     BackgroundGeolocation.on('location', location => {
-      console.log(
-        '[DEBUG] BackgroundGeolocation location',
-        location,
-        activityType,
-      );
-
       BackgroundGeolocation.startTask(taskKey => {
         const region = Object.assign({}, location, {
           latitudeDelta,
           longitudeDelta,
         });
         getDevice().then(device => {
+          console.info('Device read');
           getData('settings').then((setting: Setting) => {
+            console.info('Settings read');
             setState((state: any) => ({
               ...state,
               latitude: location.latitude,
@@ -84,6 +80,11 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
             state &&
               setting.locationEnabled &&
               sendGPSPacket(state).catch(e => console.info('ERROR', e));
+            console.log(
+              '[DEBUG] BackgroundGeolocation location',
+              location,
+              activityType,
+            );
           });
         });
 
@@ -166,7 +167,7 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
     };
   }, [enabled, activityType]);
 
-  return state;
+  return {location: state, activity: activityType};
 };
 
 export default useBackgroundGeolocationTracker;

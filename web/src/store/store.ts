@@ -1,21 +1,23 @@
 "use client";
-import { deviceReducer } from "./deviceSlice";
-import { combineReducers, compose, configureStore } from "@reduxjs/toolkit";
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
+import { deviceReducer } from "./deviceSlice";
 import { userReducer } from "./userSlice";
-// import deviceReducer from "./deviceSlice";
 
 const persistConfig = {
   key: "persist",
   storage,
+  blacklist: ["test"],
 };
 
-const rootReducer = combineReducers({
+const initialReducer = {
   user: userReducer,
   device: deviceReducer,
-});
+};
+
+const rootReducer = combineReducers(initialReducer);
 
 const makeConfiguredStore = () =>
   configureStore({
@@ -38,6 +40,17 @@ export const makeStore = () => {
     store.__persistor = persistStore(store);
     return store; // makeConfiguredStore();
   }
+};
+
+export const InjectReducer = (reducer: any) => {
+  const store = useStore();
+  const newRootReducer = combineReducers({
+    ...initialReducer,
+    ...reducer,
+  });
+  const persistedReducer = persistReducer(persistConfig, newRootReducer);
+  console.info("Configuring new store");
+  store.replaceReducer(persistedReducer);
 };
 
 export type AppStore = ReturnType<typeof makeStore>;

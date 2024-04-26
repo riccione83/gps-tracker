@@ -41,7 +41,7 @@ export default function MainScreen({navigation}: any) {
     sentAt: Date;
   } | null>(null);
   const [connected, setConnected] = useState(true);
-  const location = useBackgroundGeolocationTracker(isEnabled);
+  const {location, activity} = useBackgroundGeolocationTracker(isEnabled);
 
   /** GraphQL query and mutations */
   const [getPositionForDevice, {data: selectedDevicePosition}] = useLazyQuery(
@@ -175,6 +175,7 @@ export default function MainScreen({navigation}: any) {
       if (currentUser && token !== '' && token !== 'ALREADY_SET') {
         //Set new token to the BE
         setToken('ALREADY_SET');
+        storeData('history', []);
       }
     }, [currentUser, token]),
   );
@@ -184,15 +185,17 @@ export default function MainScreen({navigation}: any) {
     const interval = setInterval(async () => {
       PushNotificationIOS.setApplicationIconBadgeNumber(0);
       PushNotification.setApplicationIconBadgeNumber(0);
+      console.info('CONNECTED:', connected);
       if (connected) {
         //Check if there are pending messages
         const history = (await getData('history')) as any[];
-        // console.info(`${history.length} messages to send`);
+        console.info(`${history.length} messages to send`);
         if (history && history.length > 0) {
           const messages = [...history];
 
           await await Promise.all(
             messages.map(async (message, index) => {
+              await new Promise(f => setTimeout(f, 100));
               return sendGPSPacket(message).then(() => {
                 // console.info('Sent from history:', message);
                 history.splice(index, 1);
@@ -204,6 +207,10 @@ export default function MainScreen({navigation}: any) {
           await storeData('history', history);
         }
       }
+      console.info(
+        'will send:',
+        location && isEnabled && currentUser && connected,
+      );
       if (location && isEnabled && currentUser && connected) {
         try {
           await sendGPSPacket(location);
@@ -215,6 +222,7 @@ export default function MainScreen({navigation}: any) {
             );
           }
         } catch (error) {
+          console.info('ERROR on sending');
           const lastSent = networkError
             ? networkError.sentAt.getTime()
             : Date.now();
@@ -341,6 +349,7 @@ export default function MainScreen({navigation}: any) {
                 : 'Not started yet'
               : 'Position share not enabled'}
           </Text>
+          <Text>{activity}</Text>
           <View
             style={styles.separator}
             lightColor="#eee"

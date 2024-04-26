@@ -11,7 +11,13 @@ import {
   latestGpsPositions,
 } from "@/queries";
 import { addDevices } from "@/store/deviceSlice";
-import { useAppDispatch, useAppSelector } from "@/store/store";
+import {
+  InjectReducer,
+  rootReducer,
+  useAppDispatch,
+  useAppSelector,
+  useAppStore,
+} from "@/store/store";
 import { multiOptions } from "@/utils/fleetmap";
 import { getFormattedDistance, getTotalDistance } from "@/utils/gps";
 import { useLazyQuery, useQuery } from "@apollo/client";
@@ -21,7 +27,9 @@ import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { MdArrowBack as BackIcon } from "react-icons/md";
-
+import { AppStore } from "../../store/store";
+import { testReducer } from "@/store/testSlice";
+import { withModule } from "@/store/withReducer";
 const Map = dynamic(() => import("../../components/map/map"), {
   ssr: false,
 });
@@ -305,3 +313,4 @@ function Home() {
 }
 
 export default isAuth(Home);
+// export default withModule({ test: testReducer })(isAuth(Home));

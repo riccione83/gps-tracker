@@ -7,6 +7,7 @@ export const sendGPSPacket = async (gps: GPSPacket) => {
   return axios
     .post(BASE_URL + '/gps', gps)
     .then(result => {
+      console.info('GPS sent');
       return result;
     })
     .catch(async error => {

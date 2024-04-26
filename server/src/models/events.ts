@@ -24,7 +24,7 @@ export class Events {
   @JoinColumn({ name: "deviceId" })
   device: Device;
 
-  @OneToOne(() => Geofences, (geofence) => geofence.id, {
+  @ManyToOne(() => Geofences, (geofence) => geofence.id, {
     onDelete: "CASCADE",
   })
   @JoinColumn({ name: "geofenceId" })
