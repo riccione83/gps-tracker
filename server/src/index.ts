@@ -195,20 +195,30 @@ export const serverPromise = new Promise((resolve, reject) => {
             id: Number(req.body.device),
           },
         });
-        console.info("Found", device);
         if (device) {
           if (req.session.user) {
-            const geofences = await ds.manager.find(Geofences, {
-              where: { user: req.session.user },
-            });
+            // const geofences = await ds.manager.find(Geofences, {
+            //   relations: { events: true },
+            //   where: { user: req.session.user },
+            // });
+
+            const geofences = await ds.manager.query(
+              `select * from geofences g
+               left join events e on e."geofenceId" = g.id
+               left JOIN device d on d.id = e."deviceId"
+               where d."userId" = $1;`,
+              [req.session.user.id]
+            );
+
             geofences.forEach(async (g) => {
               //Check if there is a geofence event
-              const event = await ds.manager.findOne(Events, {
-                where: { device: device, geofence: g },
-              });
+              // const event = await ds.manager.findOne(Events, {
+              //   where: { device: device, geofence: g },
+              // });
               const isGeofence = isInGeofence(newPoint, g, g.radius);
-              if (event === null) {
+              if (g === null) {
                 if (isGeofence) {
+                  console.info("Creating new geofence event");
                   await ds.manager.insert(Events, {
                     device: device,
                     geofence: g,
@@ -218,15 +228,16 @@ export const serverPromise = new Promise((resolve, reject) => {
                 }
                 console.info("No geofence event for this device");
               } else {
-                const toUpdate = !isGeofence && event.status === "enter";
+                const toUpdate = !isGeofence && g.status === "enter";
                 if (toUpdate) {
+                  console.info("To update event");
                   const edited = await ds
                     .createQueryBuilder()
                     .update(Events)
                     .set({
                       status: isGeofence ? "enter" : "exit",
                     })
-                    .where("id = :id", { id: Number(event.id) })
+                    .where("id = :id", { id: Number(g.id) })
                     .execute();
                 }
               }
@@ -307,6 +318,95 @@ export const serverPromise = new Promise((resolve, reject) => {
           where: { user: user },
         });
         res.send(geofences);
+      });
+
+      app.post("/sync", async (req, res) => {
+        if (!req.session.user && !req.body.unsecure) {
+          res.send("Not authenticated").status(401);
+          return;
+        }
+        if (!req.body.history) {
+          res.status(401).send("Malformed data");
+          return;
+        }
+        const device = await ds.manager.findOne(Device, {
+          where: {
+            id: Number(req.body.history[0].device),
+          },
+        });
+        console.info("Device:", device);
+        if (device && req.session.user?.id) {
+          req.body.history.map(async (gps) => {
+            const newPoint = {
+              latitude: Number(gps.latitude),
+              longitude: Number(gps.longitude),
+              timestamp: gps.timestamp ?? new Date(),
+            };
+            const geofences = await ds.manager.query(
+              `select * from geofences g
+               left join events e on e."geofenceId" = g.id
+               left JOIN device d on d.id = e."deviceId"
+               where d."userId" = $1;`,
+              [req.session.user?.id]
+            );
+
+            geofences.forEach(async (g) => {
+              const isGeofence = isInGeofence(newPoint, g, g.radius);
+              if (g === null) {
+                if (isGeofence) {
+                  console.info(
+                    "Creating new geofence event for ",
+                    g.device,
+                    isGeofence
+                  );
+                  await ds.manager.insert(Events, {
+                    device: device,
+                    geofence: g,
+                    status: "enter",
+                  });
+                  //No previous geofences, generating one
+                }
+                console.info("No geofence event for this device");
+              } else {
+                const toUpdate = !isGeofence && g.status === "enter";
+                console.info(
+                  g.device,
+                  " To update:",
+                  toUpdate,
+                  isGeofence,
+                  g.status
+                );
+                if (toUpdate) {
+                  console.info("To update event");
+                  const edited = await ds
+                    .createQueryBuilder()
+                    .update(Events)
+                    .set({
+                      status: isGeofence ? "enter" : "exit",
+                    })
+                    .where("id = :id", { id: Number(g.id) })
+                    .execute();
+                }
+              }
+            });
+
+            const inserted = await ds.manager.insert(GPSPosition, {
+              latitude: newPoint.latitude,
+              longitude: newPoint.longitude,
+              timestamp: newPoint.timestamp,
+              satellites: req.body.satellites
+                ? Number(req.body.satellites)
+                : -1,
+              speed: req.body.speed ? Number(req.body.speed) : -1,
+              accuracy: req.body.accuracy ? Number(req.body.accuracy) : -1,
+              activity: req.body.activity,
+              device: device,
+            });
+          });
+          res.send("OK");
+        } else {
+          res.send("DEVICE_NOT_FOUND").status(404);
+        }
       });
 
       if (process.env.SSL) {

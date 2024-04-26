@@ -23,3 +23,31 @@ export const sendGPSPacket = async (gps: GPSPacket) => {
       throw new Error(error);
     });
 };
+
+export const sendHistoricalGPSPacket = async (gps: GPSPacket[]) => {
+  return axios
+    .post(BASE_URL + '/sync', {history: gps})
+    .then(result => {
+      console.info('History data sent');
+      return result;
+    })
+    .catch(async error => {
+      console.info('Unable to send historic gps data');
+      throw new Error(error);
+    });
+};
+
+export const checkHistory = async () => {
+  const history = (await getData('history')) as any[];
+  console.info(`${history.length} messages to send`);
+  if (history && history.length > 0) {
+    const messages = [...history];
+    console.info('Send new packet');
+    try {
+      await sendHistoricalGPSPacket(messages);
+      await storeData('history', []);
+    } catch {
+      console.info('Unable to send historic message');
+    }
+  }
+};

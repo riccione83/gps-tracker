@@ -70,6 +70,7 @@ const latestGpsPositions = gql(`query GetLatestPositions($userId: Int!) {
     coord {
       latitude
       longitude
+      timestamp
     }
   }
 }`);

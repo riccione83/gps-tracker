@@ -4,7 +4,7 @@ import {Platform, Alert} from 'react-native';
 import {getData} from '../../utils/storage';
 import {Setting} from '../../models/settings';
 import {GPSPacket} from '../../models/gps';
-import {sendGPSPacket} from '../../networking';
+import {checkHistory, sendGPSPacket} from '../../networking';
 
 const useBackgroundGeolocationTracker = (enabled: boolean) => {
   const [activityType, setActivityType] = useState<string | null>(null);
@@ -58,12 +58,9 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
     // Onchange
     BackgroundGeolocation.on('location', location => {
       BackgroundGeolocation.startTask(taskKey => {
-        const region = Object.assign({}, location, {
-          latitudeDelta,
-          longitudeDelta,
-        });
-        getDevice().then(device => {
+        getDevice().then(async device => {
           console.info('Device read');
+          await checkHistory();
           getData('settings').then((setting: Setting) => {
             console.info('Settings read');
             setState((state: any) => ({
@@ -76,6 +73,7 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
               speed: location.speed,
               activity: activityType,
               device: device.id,
+              timestamp: new Date(),
             }));
             state &&
               setting.locationEnabled &&
@@ -113,6 +111,7 @@ const useBackgroundGeolocationTracker = (enabled: boolean) => {
                   speed: location.speed,
                   activity: activityType,
                   device: device.id,
+                  timestamp: new Date(),
                   // region: region,
                 }));
             });

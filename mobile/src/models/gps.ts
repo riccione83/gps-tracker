@@ -6,4 +6,5 @@ export interface GPSPacket {
   altitude: number;
   accuracy: number;
   activity: string | null;
+  timestamp: Date;
 }

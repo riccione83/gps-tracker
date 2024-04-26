@@ -12,7 +12,11 @@ import useDevice from '../components/hooks/use-device';
 import MapComponent from '../components/map';
 import ModalComponent from '../components/modal';
 import {Setting} from '../models/settings';
-import {sendGPSPacket} from '../networking';
+import {
+  checkHistory,
+  sendGPSPacket,
+  sendHistoricalGPSPacket,
+} from '../networking';
 import {
   createDeviceMutation,
   devicesQuery,
@@ -175,7 +179,7 @@ export default function MainScreen({navigation}: any) {
       if (currentUser && token !== '' && token !== 'ALREADY_SET') {
         //Set new token to the BE
         setToken('ALREADY_SET');
-        storeData('history', []);
+        // storeData('history', []);
       }
     }, [currentUser, token]),
   );
@@ -185,33 +189,32 @@ export default function MainScreen({navigation}: any) {
     const interval = setInterval(async () => {
       PushNotificationIOS.setApplicationIconBadgeNumber(0);
       PushNotification.setApplicationIconBadgeNumber(0);
-      console.info('CONNECTED:', connected);
-      if (connected) {
-        //Check if there are pending messages
-        const history = (await getData('history')) as any[];
-        console.info(`${history.length} messages to send`);
-        if (history && history.length > 0) {
-          const messages = [...history];
+      // if (connected) {
+      //   //Check if there are pending messages
+      //   const history = (await getData('history')) as any[];
+      //   console.info(`${history.length} messages to send`);
+      //   if (history && history.length > 0) {
+      //     const messages = [...history];
 
-          await await Promise.all(
-            messages.map(async (message, index) => {
-              await new Promise(f => setTimeout(f, 100));
-              return sendGPSPacket(message).then(() => {
-                // console.info('Sent from history:', message);
-                history.splice(index, 1);
-                // console.info(`To send: ${history.length}`);
-              });
-            }),
-          );
-          // console.info('Completed, saving: ', history);
-          await storeData('history', history);
-        }
-      }
+      //     await await Promise.all(
+      //       messages.map(async (message, index) => {
+      //         await new Promise(f => setTimeout(f, 100));
+      //         return sendGPSPacket(message).then(() => {
+      //           // console.info('Sent from history:', message);
+      //           history.splice(index, 1);
+      //           // console.info(`To send: ${history.length}`);
+      //         });
+      //       }),
+      //     );
+      //     // console.info('Completed, saving: ', history);
+      //     await storeData('history', history);
+      //   }
+      // }
       console.info(
         'will send:',
-        location && isEnabled && currentUser && connected,
+        !!location && isEnabled && currentUser && connected,
       );
-      if (location && isEnabled && currentUser && connected) {
+      if (!!location && isEnabled && currentUser && connected) {
         try {
           await sendGPSPacket(location);
           if (networkError !== null && networkError.sent) {
@@ -242,6 +245,15 @@ export default function MainScreen({navigation}: any) {
         }
       }
     }, 5000);
+    //Clearing the interval
+    return () => clearInterval(interval);
+  }, [isEnabled, location, currentDevice, networkError]);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      //Check if there are pending messages
+      await checkHistory();
+    }, 10000);
     //Clearing the interval
     return () => clearInterval(interval);
   }, [isEnabled, location, currentDevice]);
